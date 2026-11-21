@@ -4,13 +4,11 @@ Sistema de pesaje de camiones para la Refinería de La Plata (YPF). Gestiona ór
 
 ## Estado del proyecto
 
-Están implementados **73 de los 78 casos de uso** de la especificación. El detalle caso por caso está en `Docs/Estado implementacion CU.md`.
+Están implementados **los 78 casos de uso** de la especificación. El detalle caso por caso está en `Docs/Estado implementacion CU.md`.
 
-Todavía no están:
+La integración con básculas y cámaras está **simulada**: el backend usa un Device Connector simulado (`Hardware:Modo = "Simulado"` en `appsettings.json`) y la pantalla de pesadas permite leer el peso de la báscula y detectar la patente con la cámara. Para conectar equipos reales se implementa `IDeviceConnector`.
 
-- ABM de Roles y permisos (CU05 a CU09).
-- Inicio de sesión, control de acceso por roles y doble factor de autenticación.
-- Integración con básculas y cámaras reales (Device Connector y OCR de patentes). Por ahora el peso se carga desde la pantalla de pesadas.
+Lo único que falta es el **inicio de sesión** (con el control de acceso por roles y el doble factor de autenticación que dependen de él). Por ahora la aplicación abre directo en el Panel de Control.
 
 ## Estructura del repositorio
 
@@ -107,7 +105,7 @@ dotnet run --launch-profile http
 
 La API queda disponible en `http://localhost:5033`. En modo desarrollo expone la especificación OpenAPI. La primera vez la compilación puede tardar un par de minutos.
 
-Para comprobar que se conecta a la base, abran `http://localhost:5033/api/Tanques` en el navegador: tiene que devolver los tanques de demostración en formato JSON.
+Para comprobar que se conecta a la base, abran `http://localhost:5033/api/Tanques` en el navegador: tiene que devolver los tanques de demostración en formato JSON. Para comprobar el Device Connector, abran `http://localhost:5033/api/Hardware/estado`: tiene que devolver `"modo":"Simulado"` con las básculas y cámaras.
 
 > Usen siempre el perfil `http`. El frontend apunta a `http://localhost:5033`, y con el perfil `https` la redirección a HTTPS hace que el navegador bloquee las peticiones (CORS).
 
@@ -131,7 +129,7 @@ El frontend se comunica con la API en `http://localhost:5033/api` (definido en `
 El menú lateral tiene dos grupos:
 
 - **Operaciones:** Inicio (Panel de Control), Gestión de Pesadas, Órdenes de Transporte, Planificación Logística (autorizaciones de descarga y órdenes de entrega) y Reportes.
-- **Administración:** Vehículos, Conductores, Productos, Razones Sociales, Básculas, Tanques, Puestos de Expedición, Dispositivos de Detección, Puntos de Menú y Usuarios.
+- **Administración:** Vehículos, Conductores, Productos, Razones Sociales, Básculas, Tanques, Puestos de Expedición, Dispositivos de Detección, Puntos de Menú, Roles y Permisos y Usuarios.
 
 El detalle de uso está en `Docs/Manual_Usuario_CILP.md`.
 
@@ -158,6 +156,9 @@ Confirmen que el backend esté corriendo en el puerto 5033, con el perfil `http`
 
 **Las listas están vacías aunque todo conecta.**
 Falta cargar los datos de demo (paso 2), o crear los registros desde la sección Administración.
+
+**La lectura de báscula dice que no está operativa.**
+El simulador marca una báscula como no operativa cuando tiene el certificado vencido. Use otra báscula, actualice el vencimiento desde Administración → Básculas, o cargue la pesada con Ingreso Manual.
 
 ## Documentación
 
