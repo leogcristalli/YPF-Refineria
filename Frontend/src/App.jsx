@@ -20,7 +20,7 @@ import PuntosMenuPage from './features/masters/PuntosMenuPage';
 import RolesPage from './features/masters/RolesPage';
 import AutorizacionesPage from './features/planificacion/AutorizacionesPage';
 import ReportesPage from './features/reportes/ReportesPage';
-import AyudaPage from './features/ayuda/AyudaPage';
+import AyudaPage from './features/masters/AyudaPage';
 
 // Ruta de una pantalla protegida por los puntos de menú de PUNTOS_POR_RUTA.
 const pantalla = (path, element) => (
