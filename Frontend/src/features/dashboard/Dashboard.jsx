@@ -5,6 +5,17 @@ import {
     AlertTriangle, CheckCircle2, FileText, Users, BarChart2, Loader2
 } from 'lucide-react';
 import agent from '../../api/agent';
+import { useAuth } from '../../auth/AuthContext';
+import { rutaPermitida } from '../../auth/puntosMenu';
+
+// Accesos rápidos del panel. Se muestran solo los que permiten los roles del usuario
+// (mismo criterio que el menú lateral: PUNTOS_POR_RUTA).
+const ACCESOS_RAPIDOS = [
+    { to: '/pesadas', label: 'Nueva Pesada', icon: Scale, color: 'bg-blue-50 text-blue-600' },
+    { to: '/ordenes-transporte', label: 'Órdenes OT', icon: Truck, color: 'bg-purple-50 text-purple-600' },
+    { to: '/planificacion', label: 'Planificación', icon: FileText, color: 'bg-emerald-50 text-emerald-600' },
+    { to: '/reportes', label: 'Reportes', icon: BarChart2, color: 'bg-orange-50 text-orange-600' },
+];
 
 const StatCard = ({ title, value, subValue, icon: Icon, trend, color, to }) => {
     const content = (
@@ -31,6 +42,8 @@ const StatCard = ({ title, value, subValue, icon: Icon, trend, color, to }) => {
 };
 
 const Dashboard = () => {
+    const { sesion } = useAuth();
+    const accesos = ACCESOS_RAPIDOS.filter(a => rutaPermitida(a.to, sesion?.puntosMenu));
     const [kpis, setKpis] = useState(null);
     const [pesadas, setPesadas] = useState([]);
     const [planificaciones, setPlanificaciones] = useState([]);
@@ -232,36 +245,22 @@ const Dashboard = () => {
                         <div className="absolute -right-4 -bottom-4 w-32 h-32 bg-blue-600/20 rounded-full blur-3xl" />
                     </div>
 
-                    {/* Quick access */}
-                    <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
-                        <h3 className="font-bold text-slate-800 mb-4">Accesos Rápidos</h3>
-                        <div className="grid grid-cols-2 gap-3">
-                            <Link to="/pesadas" className="flex flex-col items-center gap-2 p-4 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-100 transition-all group">
-                                <div className="p-2 bg-blue-50 text-blue-600 rounded-lg group-hover:scale-110 transition-transform">
-                                    <Scale size={20} />
-                                </div>
-                                <span className="text-[10px] font-bold text-slate-600 uppercase">Nueva Pesada</span>
-                            </Link>
-                            <Link to="/ordenes-transporte" className="flex flex-col items-center gap-2 p-4 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-100 transition-all group">
-                                <div className="p-2 bg-purple-50 text-purple-600 rounded-lg group-hover:scale-110 transition-transform">
-                                    <Truck size={20} />
-                                </div>
-                                <span className="text-[10px] font-bold text-slate-600 uppercase">Órdenes OT</span>
-                            </Link>
-                            <Link to="/planificacion" className="flex flex-col items-center gap-2 p-4 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-100 transition-all group">
-                                <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg group-hover:scale-110 transition-transform">
-                                    <FileText size={20} />
-                                </div>
-                                <span className="text-[10px] font-bold text-slate-600 uppercase">Planificación</span>
-                            </Link>
-                            <Link to="/reportes" className="flex flex-col items-center gap-2 p-4 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-100 transition-all group">
-                                <div className="p-2 bg-orange-50 text-orange-600 rounded-lg group-hover:scale-110 transition-transform">
-                                    <BarChart2 size={20} />
-                                </div>
-                                <span className="text-[10px] font-bold text-slate-600 uppercase">Reportes</span>
-                            </Link>
+                    {/* Quick access: solo los permitidos para el usuario */}
+                    {accesos.length > 0 && (
+                        <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
+                            <h3 className="font-bold text-slate-800 mb-4">Accesos Rápidos</h3>
+                            <div className="grid grid-cols-2 gap-3">
+                                {accesos.map(({ to, label, icon: Icon, color }) => (
+                                    <Link key={to} to={to} className="flex flex-col items-center gap-2 p-4 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-100 transition-all group">
+                                        <div className={`p-2 rounded-lg group-hover:scale-110 transition-transform ${color}`}>
+                                            <Icon size={20} />
+                                        </div>
+                                        <span className="text-[10px] font-bold text-slate-600 uppercase">{label}</span>
+                                    </Link>
+                                ))}
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </div>
             </div>
         </div>
