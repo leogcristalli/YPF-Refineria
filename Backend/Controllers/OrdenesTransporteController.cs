@@ -13,6 +13,7 @@ namespace Backend.Controllers
 
         // Ids fijos cargados por los scripts sysdata del proyecto Database.
         private const byte EstadoOrdenBorrador = 1;
+        private const byte EstadoOtEnEjecucion = 3;   // t_EstadoOrdenTransporte
         private const byte TipoOrdenEntrega = 1;
         private const byte TipoOrdenDescarga = 2;   // t_TipoOrden: 1 = Orden de Entrega, 2 = Autorización de Descarga
         private const byte UnidadKilos = 1;
@@ -35,28 +36,45 @@ namespace Backend.Controllers
                 .ToListAsync();
         }
 
+        // CU077: OT asignada al vehículo que está en la báscula.
+        // Solo OT abiertas con pesadas pendientes. Si el camión ya hizo su primera pesada,
+        // esa OT va primero (está en medio del circuito); después, la de fecha planificada más antigua.
         [HttpGet("ByPatente/{patente}")]
         public async Task<ActionResult<OrdenTransporte>> GetByPatente(string patente)
         {
+            var buscada = patente.Trim();
+            var pendientes = _context.PendientesDePesaje();
+
             var item = await _context.OrdenTransportes
-                .Include(ot => ot.OrdenDetalle).ThenInclude(od => od.Producto)
-                .Include(ot => ot.OrdenDetalle).ThenInclude(od => od.Orden)
+                .Include(ot => ot.OrdenDetalle).ThenInclude(od => od!.Producto)
+                .Include(ot => ot.OrdenDetalle).ThenInclude(od => od!.Orden)
                 .Include(ot => ot.Vehiculo)
                 .Include(ot => ot.Conductor)
                 .Include(ot => ot.RazonSocialTransportista)
-                .Where(ot => ot.Activo && ot.Vehiculo != null && ot.Vehiculo.PatenteChasis.ToUpper() == patente.ToUpper())
+                .Where(ot => ot.Vehiculo!.PatenteChasis == buscada
+                    && pendientes.Any(p => p.Id_OrdenTransporte == ot.Id_OrdenTransporte))
+                .OrderByDescending(ot => ot.Id_EstadoOrdenTransporte == EstadoOtEnEjecucion)
+                .ThenBy(ot => ot.FechaPlanificacion)
+                .ThenBy(ot => ot.Id_OrdenTransporte)
                 .FirstOrDefaultAsync();
 
             if (item == null)
-                return NotFound(new { message = "No se encontró ninguna orden activa para la patente indicada." });
+                return NotFound($"El vehículo {buscada.ToUpperInvariant()} no tiene órdenes de transporte pendientes de pesaje.");
 
             return item;
         }
 
+        // Incluye los datos que muestra la pantalla de pesadas (producto, vehículo, conductor, transportista).
         [HttpGet("{id}")]
         public async Task<ActionResult<OrdenTransporte>> Get(long id)
         {
-            var item = await _context.OrdenTransportes.FindAsync(id);
+            var item = await _context.OrdenTransportes
+                .Include(ot => ot.OrdenDetalle).ThenInclude(od => od!.Producto)
+                .Include(ot => ot.OrdenDetalle).ThenInclude(od => od!.Orden)
+                .Include(ot => ot.Vehiculo)
+                .Include(ot => ot.Conductor)
+                .Include(ot => ot.RazonSocialTransportista)
+                .FirstOrDefaultAsync(ot => ot.Id_OrdenTransporte == id);
             if (item == null) return NotFound();
             return item;
         }
@@ -168,58 +186,52 @@ namespace Backend.Controllers
             return Ok(new { message = "Orden cancelada." });
         }
 
+        // Baja física en cascada. Si la OT ya tiene pesadas, la FK de t_Pesada hace fallar el
+        // SaveChanges y ForeignKeyConflictHandler lo devuelve como 409 con un mensaje claro
+        // (no se atrapa la excepción acá). La transacción se descarta sin confirmar.
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(long id)
         {
-            using var transaction = _context.Database.BeginTransaction();
-            try
+            using var transaction = await _context.Database.BeginTransactionAsync();
+
+            var transporte = await _context.OrdenTransportes
+                .Include(t => t.OrdenDetalle)
+                .ThenInclude(d => d!.Orden)
+                .FirstOrDefaultAsync(t => t.Id_OrdenTransporte == id);
+
+            if (transporte == null) return NotFound();
+
+            // 0. Liberar y eliminar el vínculo con el tanque (si no, la baja falla por clave foránea)
+            if (transporte.OrdenDetalle != null)
             {
-                var transporte = await _context.OrdenTransportes
-                    .Include(t => t.OrdenDetalle)
-                    .ThenInclude(d => d.Orden)
-                    .FirstOrDefaultAsync(t => t.Id_OrdenTransporte == id);
-
-                if (transporte == null) return NotFound();
-
-                // 0. Liberar y eliminar el vínculo con el tanque (si no, la baja falla por clave foránea)
-                if (transporte.OrdenDetalle != null)
-                {
-                    await LiberarTanqueAsync(transporte.OrdenDetalle);
-                    var vinculosTanque = await _context.TanqueAlmacenamientos
-                        .Where(ta => ta.Id_OrdenDetalle == transporte.OrdenDetalle.Id_OrdenDetalle)
-                        .ToListAsync();
-                    _context.TanqueAlmacenamientos.RemoveRange(vinculosTanque);
-                }
-
-                // 1. Delete Planificacion
-                var plan = await _context.Planificaciones.FirstOrDefaultAsync(p => p.Id_OrdenTransporte == id);
-                if (plan != null) _context.Planificaciones.Remove(plan);
-
-                // 2. Delete Transporte
-                _context.OrdenTransportes.Remove(transporte);
-
-                // 3. Delete Detalle
-                if (transporte.OrdenDetalle != null)
-                {
-                    _context.OrdenDetalles.Remove(transporte.OrdenDetalle);
-
-                    // 4. Delete Orden
-                    if (transporte.OrdenDetalle.Orden != null)
-                    {
-                        _context.Ordenes.Remove(transporte.OrdenDetalle.Orden);
-                    }
-                }
-
-                await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
-
-                return NoContent();
+                await LiberarTanqueAsync(transporte.OrdenDetalle);
+                var vinculosTanque = await _context.TanqueAlmacenamientos
+                    .Where(ta => ta.Id_OrdenDetalle == transporte.OrdenDetalle.Id_OrdenDetalle)
+                    .ToListAsync();
+                _context.TanqueAlmacenamientos.RemoveRange(vinculosTanque);
             }
-            catch (Exception ex)
+
+            // 1. Planificación
+            var plan = await _context.Planificaciones.FirstOrDefaultAsync(p => p.Id_OrdenTransporte == id);
+            if (plan != null) _context.Planificaciones.Remove(plan);
+
+            // 2. Orden de transporte
+            _context.OrdenTransportes.Remove(transporte);
+
+            // 3. Detalle y 4. Orden
+            if (transporte.OrdenDetalle != null)
             {
-                await transaction.RollbackAsync();
-                return BadRequest($"Error deleting order: {ex.Message}");
+                _context.OrdenDetalles.Remove(transporte.OrdenDetalle);
+                if (transporte.OrdenDetalle.Orden != null)
+                {
+                    _context.Ordenes.Remove(transporte.OrdenDetalle.Orden);
+                }
             }
+
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            return NoContent();
         }
 
         [HttpPost]

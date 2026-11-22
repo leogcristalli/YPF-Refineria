@@ -16,11 +16,13 @@ namespace Backend.Controllers
 
         private readonly AppDbContext _context;
         private readonly IDeviceConnector _conector;
+        private readonly RegistroLecturas _lecturas;
 
-        public HardwareController(AppDbContext context, IDeviceConnector conector)
+        public HardwareController(AppDbContext context, IDeviceConnector conector, RegistroLecturas lecturas)
         {
             _context = context;
             _conector = conector;
+            _lecturas = lecturas;
         }
 
         // GET: api/Hardware/estado  (Estado de Hardware del Panel de Control)
@@ -86,6 +88,10 @@ namespace Backend.Controllers
             }
 
             var lectura = await _conector.LeerPesoAsync(bascula, esperado, ruido);
+
+            // Se guarda para que el registro de la pesada pueda verificar que el peso no se editó.
+            _lecturas.Guardar(idBascula, idPlanificacion, lectura);
+
             return Ok(new { pesoKg = lectura.PesoKg, estable = lectura.Estable, fecha = lectura.Fecha, origen = lectura.Origen, modo = _conector.Modo });
         }
 
@@ -98,11 +104,8 @@ namespace Backend.Controllers
                 .FirstOrDefaultAsync(d => d.Id_DispositivoDetector == idDispositivo && d.Activo);
             if (dispositivo == null) return NotFound("El dispositivo no existe o está dado de baja.");
 
-            var pendientes = await _context.Planificaciones.AsNoTracking()
+            var pendientes = await _context.PendientesDePesaje().AsNoTracking()
                 .Include(p => p.OrdenTransporte).ThenInclude(ot => ot!.Vehiculo)
-                .Where(p => p.OrdenTransporte!.Activo
-                    && p.OrdenTransporte.OrdenDetalle!.Orden!.Activo
-                    && _context.Pesadas.Count(x => x.Id_Planificacion == p.Id_Planificacion) < 2)
                 .OrderBy(p => p.OrdenTransporte!.FechaPlanificacion)
                 .Take(3)
                 .ToListAsync();

@@ -22,6 +22,7 @@ if (modoHardware.Equals("Simulado", StringComparison.OrdinalIgnoreCase))
     builder.Services.AddSingleton<IDeviceConnector, SimulatedDeviceConnector>();
 else
     throw new InvalidOperationException("Hardware:Modo = \"" + modoHardware + "\" no tiene un conector registrado. Use \"Simulado\".");
+builder.Services.AddSingleton<RegistroLecturas>();
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();

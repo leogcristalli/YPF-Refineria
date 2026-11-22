@@ -28,7 +28,23 @@ namespace Backend.Controllers
                 .ToListAsync();
         }
 
-        [HttpGet("{id}")]
+        // GET: api/Planificaciones/pendientes
+        // Solo las de OT abiertas con pesadas pendientes: son las que se pueden pesar (modal de CU078).
+        [HttpGet("pendientes")]
+        public async Task<ActionResult<IEnumerable<Planificacion>>> GetPendientes()
+        {
+            return await _context.PendientesDePesaje()
+                .Include(p => p.OrdenTransporte)
+                    .ThenInclude(ot => ot!.OrdenDetalle)
+                        .ThenInclude(od => od!.Producto)
+                .Include(p => p.OrdenTransporte)
+                    .ThenInclude(ot => ot!.Vehiculo)
+                .OrderBy(p => p.OrdenTransporte!.FechaPlanificacion)
+                .ThenBy(p => p.Id_Planificacion)
+                .ToListAsync();
+        }
+
+        [HttpGet("{id:long}")]
         public async Task<ActionResult<Planificacion>> Get(long id)
         {
             var item = await _context.Planificaciones.FindAsync(id);
