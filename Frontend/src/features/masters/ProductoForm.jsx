@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save } from 'lucide-react';
 import agent, { getErrorMessage } from '../../api/agent';
+import MensajeError from '../../common/MensajeError';
 
 const ProductoForm = ({ isOpen, onClose, onSuccess, initialValues }) => {
     const [loading, setLoading] = useState(false);
+    // Error a mostrar dentro del formulario (en lugar de setError()).
+    const [error, setError] = useState('');
+    useEffect(() => { if (isOpen) setError(''); }, [isOpen]);
     const [formData, setFormData] = useState({
         descripcion: '',
         densidad: '',
@@ -38,6 +42,7 @@ const ProductoForm = ({ isOpen, onClose, onSuccess, initialValues }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setError('');
         setLoading(true);
         try {
             const payload = {
@@ -57,7 +62,7 @@ const ProductoForm = ({ isOpen, onClose, onSuccess, initialValues }) => {
             onClose();
         } catch (error) {
             console.error("Error saving product", error);
-            alert(getErrorMessage(error, "Error al guardar producto."));
+            setError(getErrorMessage(error, "Error al guardar producto."));
         } finally {
             setLoading(false);
         }
@@ -141,6 +146,9 @@ const ProductoForm = ({ isOpen, onClose, onSuccess, initialValues }) => {
                             <p className="text-xs text-gray-500 mt-1">1 = Kilos, 2 = Toneladas, 3 = Litros, 4 = Galón</p>
                         </div>
                     </div>
+
+                    <MensajeError mensaje={error} />
+
 
                     <div className="flex justify-end pt-4 gap-3">
                         <button 
