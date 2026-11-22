@@ -46,6 +46,18 @@ namespace Backend.Models
 
         [Column("Activo_Usuario")]
         public bool Activo { get; set; } = true;
+
+        // Doble factor de autenticación (TOTP). Ninguno de estos datos viaja en el JSON.
+        // TotpSecreto va cifrado (ver ProtectorTotp) y solo es válido cuando TotpHabilitado es true.
+        [Column("TotpSecreto_Usuario"), MaxLength(255), JsonIgnore, ValidateNever]
+        public string? TotpSecreto { get; set; }
+
+        [Column("TotpHabilitado_Usuario"), JsonIgnore, ValidateNever]
+        public bool TotpHabilitado { get; set; }
+
+        // Último paso de tiempo aceptado: impide reutilizar un código.
+        [Column("TotpUltimoPaso_Usuario"), JsonIgnore, ValidateNever]
+        public long? TotpUltimoPaso { get; set; }
     }
 
     [Table("t_Rol")]

@@ -9,11 +9,19 @@ const AuthContext = createContext(null);
 export const AuthProvider = ({ children }) => {
     const [sesion, setSesion] = useState(() => leerSesion());
 
-    const login = async (idRed, password) => {
-        const respuesta = await agent.Auth.login(idRed, password);
+    // Guarda la sesión que devolvió el servidor (login sin doble factor o verificación del código).
+    const iniciarSesion = (respuesta) => {
         guardarSesion(respuesta);
         setSesion(respuesta);
         return respuesta;
+    };
+
+    // Con doble factor el servidor no devuelve la sesión sino un desafío (requiere2fa o
+    // requiereEnrolamiento): la pantalla de login lo completa con el código y llama a iniciarSesion.
+    const login = async (idRed, password) => {
+        const respuesta = await agent.Auth.login(idRed, password);
+        if (respuesta.requiere2fa || respuesta.requiereEnrolamiento) return respuesta;
+        return iniciarSesion(respuesta);
     };
 
     const logout = () => {
@@ -25,7 +33,7 @@ export const AuthProvider = ({ children }) => {
     const tienePunto = (...puntos) => !!sesion && puntos.some(p => sesion.puntosMenu?.includes(p));
 
     return (
-        <AuthContext.Provider value={{ sesion, login, logout, tienePunto }}>
+        <AuthContext.Provider value={{ sesion, login, iniciarSesion, logout, tienePunto }}>
             {children}
         </AuthContext.Provider>
     );

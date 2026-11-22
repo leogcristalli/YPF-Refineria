@@ -16,11 +16,11 @@ agent.interceptors.request.use(config => {
 
 // 401 = sin sesión o token vencido: se borra la sesión y se vuelve al login.
 // El error se devuelve tal cual (sin cambiar su forma) para que getErrorMessage siga funcionando.
-// El 401 del propio login (credenciales inválidas) lo muestra la pantalla de login.
+// Los 401 de /Auth/ (credenciales o código incorrectos) los muestra la pantalla de login.
 agent.interceptors.response.use(
     response => response,
     error => {
-        if (error?.response?.status === 401 && error.config?.url !== URL_LOGIN) {
+        if (error?.response?.status === 401 && !error.config?.url?.startsWith('/Auth/')) {
             borrarSesion();
             if (window.location.pathname !== '/login') window.location.assign('/login?vencida=1');
         }
@@ -56,12 +56,18 @@ const Usuarios = {
     // Ids de los roles asignados / reemplazar la asignación completa.
     roles: (id) => requests.get(`/Usuarios/${id}/roles`),
     asignarRoles: (id, roles) => requests.put(`/Usuarios/${id}/roles`, { roles }),
+    // Borra el autenticador del usuario: lo vuelve a configurar en su próximo ingreso.
+    reiniciar2fa: (id) => requests.post(`/Usuarios/${id}/reiniciar-2fa`),
 };
 const TiposDocumento = {
     list: () => requests.get('/TiposDocumento'),
 };
 const Auth = {
     login: (idRed, password) => requests.post(URL_LOGIN, { idRed, password }),
+    // Doble factor: el desafío lo devuelve el login cuando el usuario debe confirmar con un código.
+    verificar2fa: (desafio, codigo) => requests.post('/Auth/2fa/verificar', { desafio, codigo }),
+    iniciarEnrolamiento: (desafio) => requests.post('/Auth/2fa/enrolar/iniciar', { desafio }),
+    confirmarEnrolamiento: (desafio, codigo) => requests.post('/Auth/2fa/enrolar/confirmar', { desafio, codigo }),
 };
 const Tanques = createCrud('/Tanques');
 const DispositivosDetectores = createCrud('/DispositivosDetectores');
