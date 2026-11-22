@@ -41,6 +41,10 @@ else
     throw new InvalidOperationException("Hardware:Modo = \"" + modoHardware + "\" no tiene un conector registrado. Use \"Simulado\".");
 builder.Services.AddSingleton<RegistroLecturas>();
 
+// Doble factor de autenticación (TOTP): cifrado del secreto y límite de intentos (ver AuthController).
+builder.Services.AddSingleton<ProtectorTotp>();
+builder.Services.AddMemoryCache();
+
 // Autenticación con JWT (lo emite AuthController). Los claims se usan con su nombre corto
 // (sub, name, role, punto): ver Backend/Auth/Permisos.cs.
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

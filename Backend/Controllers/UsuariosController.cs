@@ -71,6 +71,7 @@ namespace Backend.Controllers
                 u.NroDocumento,
                 u.Id_TipoDocumento,
                 u.Activo,
+                Doble2fa = u.TotpHabilitado,
                 Roles = (from ur in _context.UsuarioRoles
                          join r in _context.Roles on ur.Id_Rol equals r.Id_Rol
                          where ur.Id_Usuario == u.Id_Usuario && ur.Activo && r.Activo
@@ -165,6 +166,22 @@ namespace Backend.Controllers
         }
 
         // CU14: Eliminar Usuario (baja lógica)
+        // POST: api/Usuarios/5/reiniciar-2fa
+        // Para quien perdió o cambió su teléfono: se borra su autenticador y lo vuelve a configurar
+        // en el próximo inicio de sesión (si su rol exige doble factor).
+        [HttpPost("{id}/reiniciar-2fa")]
+        public async Task<IActionResult> Reiniciar2fa(int id)
+        {
+            var usuario = await _context.Usuarios.FirstOrDefaultAsync(u => u.Id_Usuario == id && u.Activo);
+            if (usuario == null) return NotFound();
+
+            usuario.TotpSecreto = null;
+            usuario.TotpHabilitado = false;
+            usuario.TotpUltimoPaso = null;
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {

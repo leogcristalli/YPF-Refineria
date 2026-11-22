@@ -25,10 +25,12 @@ obj/
 project.lock.json
 project.fragment.lock.json
 artifacts/
+TestResults/
 
 # SQL Project files
 *.dacpac
 *.dbmdl
+*.jfm
 *.sqlcmdvars
 
 # Node.js / React
@@ -43,6 +45,8 @@ yarn-error.log*
 .env.production.local
 /Frontend/dist/
 /Frontend/build/
+# Generado por scripts/sync-docs.mjs a partir de Docs/ (manual y cronograma de la página de Ayuda)
+/Frontend/src/content/
 
 # Windows
 Thumbs.db

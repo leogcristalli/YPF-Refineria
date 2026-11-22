@@ -7,6 +7,9 @@
     ,[PasswordHash_Usuario] VARCHAR(255)		NOT NULL
     ,[Id_TipoDocumento]		TINYINT				NOT NULL
     ,[Activo_Usuario]		BIT	DEFAULT(1)		NOT NULL
+    ,[TotpSecreto_Usuario]		VARCHAR(255)		NULL			-- secreto TOTP cifrado (doble factor)
+    ,[TotpHabilitado_Usuario]	BIT	DEFAULT(0)		NOT NULL	-- 1 = el usuario confirmó su autenticador
+    ,[TotpUltimoPaso_Usuario]	BIGINT				NULL			-- último paso de tiempo aceptado (evita reutilizar un código)
 	,[Audit_insert_date]	DATETIME			DEFAULT(GETDATE()) NOT NULL
 	,[Audit_insert_user]	VARCHAR(50)			DEFAULT(dbo.fn_getcurrentuser()) NOT NULL
 	,[Audit_update_date]	DATETIME			NULL
