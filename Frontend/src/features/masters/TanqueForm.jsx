@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save } from 'lucide-react';
 import agent, { getErrorMessage } from '../../api/agent';
+import MensajeError from '../../common/MensajeError';
 
 const formatoLitros = (n) =>
     Number(n ?? 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -8,6 +9,9 @@ const formatoLitros = (n) =>
 // Modal de Tanque: alta (CU057), modificación (CU058) y detalle de solo lectura (CU056).
 const TanqueForm = ({ isOpen, onClose, onSuccess, initialValues, readOnly = false }) => {
     const [loading, setLoading] = useState(false);
+    // Error a mostrar dentro del formulario (en lugar de setError()).
+    const [error, setError] = useState('');
+    useEffect(() => { if (isOpen) setError(''); }, [isOpen]);
     const [formData, setFormData] = useState({ codigo: '', descripcion: '', volumenMaximo: '' });
 
     useEffect(() => {
@@ -27,10 +31,11 @@ const TanqueForm = ({ isOpen, onClose, onSuccess, initialValues, readOnly = fals
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setError('');
 
         const volumen = parseFloat(formData.volumenMaximo);
         if (isNaN(volumen) || volumen <= 0) {
-            alert('El volumen máximo debe ser mayor que cero.');
+            setError('El volumen máximo debe ser mayor que cero.');
             return;
         }
 
@@ -52,7 +57,7 @@ const TanqueForm = ({ isOpen, onClose, onSuccess, initialValues, readOnly = fals
             onClose();
         } catch (error) {
             console.error('Error saving tanque', error);
-            alert(getErrorMessage(error, 'Error al guardar el tanque.'));
+            setError(getErrorMessage(error, 'Error al guardar el tanque.'));
         } finally {
             setLoading(false);
         }
@@ -142,6 +147,9 @@ const TanqueForm = ({ isOpen, onClose, onSuccess, initialValues, readOnly = fals
                             </div>
                         )}
                     </div>
+
+                    <MensajeError mensaje={error} />
+
 
                     <div className="flex justify-end pt-4 gap-3">
                         <button

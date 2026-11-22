@@ -3,6 +3,7 @@ import {
     X, Save, Loader2, AlertCircle, Calendar, FileText, Eye, Ban, Database, MapPin, CalendarClock
 } from 'lucide-react';
 import agent, { getErrorMessage } from '../../api/agent';
+import MensajeError from '../../common/MensajeError';
 
 // Modales de órdenes compartidos por Planificación Logística (Autorizaciones de Descarga y
 // Órdenes de Entrega) y por Órdenes de Transporte: un solo formulario de alta y modificación.
@@ -38,12 +39,6 @@ export const esEditable = (item) => {
         && item.id_EstadoOrdenTransporte !== OT_EN_EJECUCION && item.id_EstadoOrdenTransporte !== OT_EJECUTADO;
 };
 
-export const MensajeError = ({ mensaje }) => mensaje ? (
-    <div role="alert" className="text-sm text-red-700 bg-red-50 border border-red-100 rounded-xl p-3 flex items-start gap-2">
-        <AlertCircle size={16} className="shrink-0 mt-0.5" />
-        <span>{mensaje}</span>
-    </div>
-) : null;
 
 const claseCampo = 'w-full p-2.5 border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 outline-none';
 const claseSelect = `${claseCampo} bg-white`;

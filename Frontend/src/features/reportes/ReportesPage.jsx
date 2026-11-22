@@ -5,6 +5,7 @@ import {
     ChevronDown, Filter, Package, ArrowUpRight
 } from 'lucide-react';
 import agent, { getErrorMessage } from '../../api/agent';
+import MensajeError from '../../common/MensajeError';
 
 // ─────────── Sub-componentes ───────────
 
@@ -64,6 +65,7 @@ const ReportesPage = () => {
 
     const [movPeriodo, setMovPeriodo] = useState(null);
     const [loadingPeriodo, setLoadingPeriodo] = useState(false);
+    const [errorPeriodo, setErrorPeriodo] = useState('');   // validación y errores del reporte CU080
 
     const [movProducto, setMovProducto] = useState(null);
     const [loadingProducto, setLoadingProducto] = useState(false);
@@ -87,12 +89,13 @@ const ReportesPage = () => {
 
     const loadPeriodo = async () => {
         // CU080-RN02: Desde debe ser menor o igual a Hasta
+        setErrorPeriodo('');
         if (!fechaDesde || !fechaHasta) {
-            alert('Las fechas Desde y Hasta son obligatorias.');
+            setErrorPeriodo('Las fechas Desde y Hasta son obligatorias.');
             return;
         }
         if (fechaDesde > fechaHasta) {
-            alert('La fecha Desde debe ser menor o igual a la fecha Hasta.');
+            setErrorPeriodo('La fecha Desde debe ser menor o igual a la fecha Hasta.');
             return;
         }
         setLoadingPeriodo(true);
@@ -106,7 +109,7 @@ const ReportesPage = () => {
             setMovPeriodo(data);
         } catch (e) {
             console.error('Error loading movimientos por período', e);
-            alert(getErrorMessage(e, 'No se pudo generar el reporte.'));
+            setErrorPeriodo(getErrorMessage(e, 'No se pudo generar el reporte.'));
         } finally {
             setLoadingPeriodo(false);
         }
@@ -470,6 +473,8 @@ const ReportesPage = () => {
                             Filtrar Período
                         </button>
                     </div>
+
+                    <MensajeError mensaje={errorPeriodo} onCerrar={() => setErrorPeriodo('')} />
 
                     {/* Resumen KPIs del Período */}
                     {movPeriodo?.resumen && (

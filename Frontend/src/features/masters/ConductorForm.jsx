@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save } from 'lucide-react';
 import agent, { getErrorMessage } from '../../api/agent';
+import MensajeError from '../../common/MensajeError';
 
 const ConductorForm = ({ isOpen, onClose, onSuccess, initialValues }) => {
     const [loading, setLoading] = useState(false);
+    // Error a mostrar dentro del formulario (en lugar de setError()).
+    const [error, setError] = useState('');
+    useEffect(() => { if (isOpen) setError(''); }, [isOpen]);
     const [formData, setFormData] = useState({
         nombre: '',
         apellido: '',
@@ -17,7 +21,7 @@ const ConductorForm = ({ isOpen, onClose, onSuccess, initialValues }) => {
         if (!isOpen) return;
         agent.TiposDocumento.list()
             .then(setTiposDocumento)
-            .catch(error => alert(getErrorMessage(error, 'No se pudieron cargar los tipos de documento.')));
+            .catch(error => setError(getErrorMessage(error, 'No se pudieron cargar los tipos de documento.')));
     }, [isOpen]);
 
     useEffect(() => {
@@ -47,6 +51,7 @@ const ConductorForm = ({ isOpen, onClose, onSuccess, initialValues }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setError('');
         setLoading(true);
         try {
             const payload = {
@@ -64,7 +69,7 @@ const ConductorForm = ({ isOpen, onClose, onSuccess, initialValues }) => {
             onClose();
         } catch (error) {
             console.error("Error saving conductor", error);
-            alert(getErrorMessage(error, "Error al guardar conductor."));
+            setError(getErrorMessage(error, "Error al guardar conductor."));
         } finally {
             setLoading(false);
         }
@@ -150,6 +155,9 @@ const ConductorForm = ({ isOpen, onClose, onSuccess, initialValues }) => {
                             />
                         </div>
                     </div>
+
+                    <MensajeError mensaje={error} />
+
 
                     <div className="flex justify-end pt-4 gap-3">
                         <button 
