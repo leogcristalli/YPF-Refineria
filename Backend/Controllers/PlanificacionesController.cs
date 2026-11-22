@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Backend.Auth;
 using Backend.Data;
 using Backend.Models;
 
@@ -7,6 +8,7 @@ namespace Backend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Permiso]
     public class PlanificacionesController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -31,6 +33,7 @@ namespace Backend.Controllers
         // GET: api/Planificaciones/pendientes
         // Solo las de OT abiertas con pesadas pendientes: son las que se pueden pesar (modal de CU078).
         [HttpGet("pendientes")]
+        [Permiso(PuntoMenu.Pesadas)]
         public async Task<ActionResult<IEnumerable<Planificacion>>> GetPendientes()
         {
             return await _context.PendientesDePesaje()

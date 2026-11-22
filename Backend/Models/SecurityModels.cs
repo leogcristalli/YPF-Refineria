@@ -37,13 +37,9 @@ namespace Backend.Models
         [RegularExpression(@"^[a-zA-Z0-9]+$", ErrorMessage = "El número de documento debe ser alfanumérico, sin espacios.")]
         public string NroDocumento { get; set; } = "";
 
-        // Nunca viaja en el JSON. El controller lo calcula a partir de Password.
+        // Nunca viaja en el JSON. UsuariosController lo calcula a partir de la contraseña del request.
         [Column("PasswordHash_Usuario"), MaxLength(255), JsonIgnore, ValidateNever]
         public string PasswordHash { get; set; } = "";
-
-        // Solo de entrada: contraseña en texto plano que manda el frontend. No se mapea ni se devuelve.
-        [NotMapped, JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        public string? Password { get; set; }
 
         [Range(1, byte.MaxValue, ErrorMessage = "El tipo de documento es requerido.")]
         public byte Id_TipoDocumento { get; set; }
