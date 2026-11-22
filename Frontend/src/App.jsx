@@ -1,6 +1,9 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import MainLayout from './layout/MainLayout';
+import LoginPage from './auth/LoginPage';
+import { RequireAuth, Permitido } from './auth/AuthContext';
+import { PUNTOS } from './auth/puntosMenu';
 import Dashboard from './features/dashboard/Dashboard';
 import PesadasPage from './features/pesadas/PesadasPage';
 import OrdenesTransportePage from './features/masters/OrdenesTransportePage';
@@ -18,30 +21,38 @@ import RolesPage from './features/masters/RolesPage';
 import AutorizacionesPage from './features/planificacion/AutorizacionesPage';
 import ReportesPage from './features/reportes/ReportesPage';
 
+// Ruta de una pantalla con los puntos de menú que la habilitan.
+const pantalla = (path, puntos, element) => (
+  <Route path={path} element={<Permitido puntos={puntos}>{element}</Permitido>} />
+);
+
 function App() {
   return (
     <Routes>
-      <Route path="/" element={<MainLayout />}>
+      <Route path="/login" element={<LoginPage />} />
+
+      <Route path="/" element={<RequireAuth><MainLayout /></RequireAuth>}>
+        {/* Inicio: cualquier usuario logueado */}
         <Route index element={<Dashboard />} />
 
         {/* Operaciones */}
-        <Route path="pesadas" element={<PesadasPage />} />
-        <Route path="ordenes-transporte" element={<OrdenesTransportePage />} />
-        <Route path="planificacion" element={<AutorizacionesPage />} />
-        <Route path="reportes" element={<ReportesPage />} />
+        {pantalla('pesadas', [PUNTOS.PESADAS], <PesadasPage />)}
+        {pantalla('ordenes-transporte', [PUNTOS.ORDENES_TRANSPORTE], <OrdenesTransportePage />)}
+        {pantalla('planificacion', [PUNTOS.AUTORIZACIONES_DESCARGA, PUNTOS.ORDENES_ENTREGA], <AutorizacionesPage />)}
+        {pantalla('reportes', [PUNTOS.REPORTES], <ReportesPage />)}
 
         {/* Maestros */}
-        <Route path="vehiculos" element={<VehiculosPage />} />
-        <Route path="conductores" element={<ConductoresPage />} />
-        <Route path="productos" element={<ProductosPage />} />
-        <Route path="razones-sociales" element={<RazonesSocialesPage />} />
-        <Route path="basculas" element={<BasculasPage />} />
-        <Route path="tanques" element={<TanquesPage />} />
-        <Route path="puestos" element={<PuestosPage />} />
-        <Route path="dispositivos" element={<DispositivosPage />} />
-        <Route path="puntos-menu" element={<PuntosMenuPage />} />
-        <Route path="roles" element={<RolesPage />} />
-        <Route path="usuarios" element={<UsuariosPage />} />
+        {pantalla('vehiculos', [PUNTOS.VEHICULOS], <VehiculosPage />)}
+        {pantalla('conductores', [PUNTOS.CONDUCTORES], <ConductoresPage />)}
+        {pantalla('productos', [PUNTOS.PRODUCTOS], <ProductosPage />)}
+        {pantalla('razones-sociales', [PUNTOS.RAZONES_SOCIALES], <RazonesSocialesPage />)}
+        {pantalla('basculas', [PUNTOS.BASCULAS], <BasculasPage />)}
+        {pantalla('tanques', [PUNTOS.TANQUES], <TanquesPage />)}
+        {pantalla('puestos', [PUNTOS.PUESTOS], <PuestosPage />)}
+        {pantalla('dispositivos', [PUNTOS.DISPOSITIVOS], <DispositivosPage />)}
+        {pantalla('puntos-menu', [PUNTOS.PUNTOS_MENU], <PuntosMenuPage />)}
+        {pantalla('roles', [PUNTOS.ROLES], <RolesPage />)}
+        {pantalla('usuarios', [PUNTOS.USUARIOS], <UsuariosPage />)}
       </Route>
     </Routes>
   );
