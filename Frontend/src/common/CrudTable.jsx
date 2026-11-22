@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { getErrorMessage } from '../api/agent';
+import MensajeError from './MensajeError';
 import { Trash2, Edit, Plus, AlertTriangle, X, Search } from 'lucide-react';
 
 // Modal de confirmación de eliminación.
@@ -61,6 +62,8 @@ const CrudTable = ({
     const [loading, setLoading] = useState(false);
     const [search, setSearch] = useState('');
     const [deleteModal, setDeleteModal] = useState({ open: false, id: null, name: null });
+    // Error de la última acción sobre la tabla (ej. 409 al eliminar un registro en uso).
+    const [error, setError] = useState('');
 
     const loadData = async () => {
         setLoading(true);
@@ -88,6 +91,7 @@ const CrudTable = ({
     };
 
     const handleDeleteConfirm = async () => {
+        setError('');
         try {
             if (onDelete) {
                 await onDelete(deleteModal.id);
@@ -99,7 +103,8 @@ const CrudTable = ({
         } catch (error) {
             console.error("Error deleting:", error);
             // Ej. 409 si el registro está referenciado por otros (FK).
-            alert(getErrorMessage(error, "Error al eliminar el registro."));
+            setDeleteModal({ open: false, id: null, name: null });
+            setError(getErrorMessage(error, "Error al eliminar el registro."));
         }
     };
 
@@ -146,6 +151,8 @@ const CrudTable = ({
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-9 pr-4 text-sm font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300 outline-none transition-all"
                 />
             </div>
+
+            <MensajeError mensaje={error} onCerrar={() => setError('')} />
 
             {/* Table */}
             <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">

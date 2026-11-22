@@ -4,6 +4,7 @@ import {
     CheckCircle2, Clock, Eye, Pencil, Trash2, Ban
 } from 'lucide-react';
 import agent, { getErrorMessage } from '../../api/agent';
+import MensajeError from '../../common/MensajeError';
 import { useAuth } from '../../auth/AuthContext';
 import { PUNTOS } from '../../auth/puntosMenu';
 import {
@@ -25,6 +26,7 @@ const AutorizacionesPage = () => {
     const [detalleOrden, setDetalleOrden] = useState(null);
     const [editarOrden, setEditarOrden] = useState(null);
     const [cancelarOrden, setCancelarOrden] = useState(null);
+    const [error, setError] = useState('');   // error al eliminar (ej. 409 si tiene pesadas)
 
     const load = () => {
         setLoading(true);
@@ -37,12 +39,13 @@ const AutorizacionesPage = () => {
 
     const handleDelete = async (item) => {
         if (window.confirm(`¿Está seguro de eliminar permanentemente la orden OT-${item.id_OrdenTransporte}? Esta acción eliminará los detalles y planificaciones asociadas.`)) {
+            setError('');
             try {
                 await agent.OrdenesTransporte.delete(item.id_OrdenTransporte);
                 load();
             } catch (err) {
                 console.error(err);
-                alert(getErrorMessage(err, 'Error al eliminar la orden.'));
+                setError(getErrorMessage(err, 'Error al eliminar la orden.'));
             }
         }
     };
@@ -93,6 +96,8 @@ const AutorizacionesPage = () => {
                     Nueva {tab === 'descarga' ? 'Autorización' : 'Entrega'}
                 </button>
             </div>
+
+            <MensajeError mensaje={error} onCerrar={() => setError('')} />
 
             {/* Tabs */}
             <div className="flex bg-white p-1 rounded-2xl shadow-sm border border-slate-100 max-w-md">
