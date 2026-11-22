@@ -5,6 +5,8 @@ import {
     Eye, Pencil, Trash2, Ban, Database
 } from 'lucide-react';
 import agent, { getErrorMessage } from '../../api/agent';
+import { useAuth } from '../../auth/AuthContext';
+import { PUNTOS } from '../../auth/puntosMenu';
 
 // ─────────── Modal Cancelar Orden (CU064 / CU070) ───────────
 const CancelarOrdenModal = ({ isOpen, onClose, onSuccess, orden }) => {
@@ -761,7 +763,11 @@ const EditarOrdenModal = ({ isOpen, onClose, onSuccess, orden }) => {
 const AutorizacionesPage = () => {
     const [ordenes, setOrdenes] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [tab, setTab] = useState('descarga');
+    // Cada pestaña tiene su punto de menú (Entrega 3: Recepción opera descargas; Despacho, entregas).
+    const { tienePunto } = useAuth();
+    const verDescargas = tienePunto(PUNTOS.AUTORIZACIONES_DESCARGA);
+    const verEntregas = tienePunto(PUNTOS.ORDENES_ENTREGA);
+    const [tab, setTab] = useState(verDescargas ? 'descarga' : 'despacho');
     const [search, setSearch] = useState('');
     const [modalOpen, setModalOpen] = useState(false);
     const [detalleOrden, setDetalleOrden] = useState(null);
@@ -845,18 +851,22 @@ const AutorizacionesPage = () => {
 
             {/* Tabs */}
             <div className="flex bg-white p-1 rounded-2xl shadow-sm border border-slate-100 max-w-md">
-                <button
-                    onClick={() => setTab('descarga')}
-                    className={`flex-1 py-2.5 rounded-xl font-bold text-sm transition-all ${tab === 'descarga' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}
-                >
-                    Autorizaciones (Crudo)
-                </button>
-                <button
-                    onClick={() => setTab('despacho')}
-                    className={`flex-1 py-2.5 rounded-xl font-bold text-sm transition-all ${tab === 'despacho' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}
-                >
-                    Entregas (Refinados)
-                </button>
+                {verDescargas && (
+                    <button
+                        onClick={() => setTab('descarga')}
+                        className={`flex-1 py-2.5 rounded-xl font-bold text-sm transition-all ${tab === 'descarga' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}
+                    >
+                        Autorizaciones (Crudo)
+                    </button>
+                )}
+                {verEntregas && (
+                    <button
+                        onClick={() => setTab('despacho')}
+                        className={`flex-1 py-2.5 rounded-xl font-bold text-sm transition-all ${tab === 'despacho' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}
+                    >
+                        Entregas (Refinados)
+                    </button>
+                )}
             </div>
 
             {/* Table card */}

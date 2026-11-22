@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Backend.Auth;
 using Backend.Data;
 using Backend.Models;
 
@@ -8,6 +9,7 @@ namespace Backend.Controllers
     // ABM de Roles y asignación de puntos de menú (CU05 a CU09).
     [Route("api/[controller]")]
     [ApiController]
+    [Permiso(PuntoMenu.Roles)]
     public class RolesController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -69,8 +71,9 @@ namespace Backend.Controllers
                 _context.RolCasosDeUso.Add(new RolCasoDeUso { Id_Rol = idRol, Id_CasoDeUso = id, Activo = true });
         }
 
-        // GET: api/Roles  (CU05: Consultar)
+        // GET: api/Roles  (CU05: Consultar). También lo usa la pantalla Usuarios para asignar roles.
         [HttpGet]
+        [Permiso(PuntoMenu.Roles, PuntoMenu.Usuarios)]
         public async Task<ActionResult<IEnumerable<object>>> GetRoles()
         {
             var roles = await _context.Roles
@@ -130,8 +133,15 @@ namespace Backend.Controllers
             var error = await ValidarAsync(datos, nombre, id);
             if (error != null) return BadRequest(error);
 
+            // El Administrador de Sistema no puede perder la administración de roles y usuarios:
+            // si no, nadie podría volver a asignar permisos.
+            var puntos = (datos.PuntosMenu ?? new List<int>()).Distinct().ToList();
+            if (id == RolBase.AdministradorSistema
+                && (!puntos.Contains(PuntoMenu.Roles) || !puntos.Contains(PuntoMenu.Usuarios)))
+                return BadRequest("El rol Administrador de Sistema debe conservar los puntos de menú Roles y Permisos y Usuarios.");
+
             rol.Descripcion = nombre;
-            await SincronizarPuntosMenuAsync(id, (datos.PuntosMenu ?? new List<int>()).Distinct().ToList());
+            await SincronizarPuntosMenuAsync(id, puntos);
 
             await _context.SaveChangesAsync();
             return NoContent();
@@ -143,6 +153,9 @@ namespace Backend.Controllers
         {
             var rol = await _context.Roles.FirstOrDefaultAsync(r => r.Id_Rol == id && r.Activo);
             if (rol == null) return NotFound();
+
+            if (id == RolBase.AdministradorSistema)
+                return BadRequest("No se puede eliminar el rol Administrador de Sistema.");
 
             // RN04: no se puede eliminar un rol que tiene usuarios activos asignados
             var enUso = await _context.UsuarioRoles.AnyAsync(u => u.Id_Rol == id && u.Activo);

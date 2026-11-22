@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Backend.Auth;
 using Backend.Data;
 using Backend.Models;
 
@@ -10,6 +11,7 @@ namespace Backend.Controllers
     // los puntos de menú los define el sistema, por eso no hay alta.
     [Route("api/[controller]")]
     [ApiController]
+    [Permiso(PuntoMenu.PuntosMenu)]
     public class PuntosMenuController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -26,8 +28,9 @@ namespace Backend.Controllers
             c.Activo
         };
 
-        // GET: api/PuntosMenu  (CU01: Consultar)
+        // GET: api/PuntosMenu  (CU01: Consultar). También lo usa la pantalla Roles para asignar puntos.
         [HttpGet]
+        [Permiso(PuntoMenu.PuntosMenu, PuntoMenu.Roles)]
         public async Task<ActionResult<IEnumerable<object>>> GetPuntosMenu()
         {
             var puntos = await _context.CasosDeUso
@@ -88,6 +91,10 @@ namespace Backend.Controllers
         {
             var punto = await _context.CasosDeUso.FirstOrDefaultAsync(c => c.Id_CasoDeUso == id && c.Activo);
             if (punto == null) return NotFound();
+
+            // Sin estos dos puntos nadie podría volver a administrar permisos.
+            if (id == PuntoMenu.Roles || id == PuntoMenu.Usuarios)
+                return BadRequest("No se pueden dar de baja los puntos de menú Roles y Permisos ni Usuarios.");
 
             // Al darlo de baja se quita también de los roles que lo tenían asignado.
             var asignaciones = await _context.RolCasosDeUso

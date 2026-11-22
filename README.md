@@ -4,11 +4,11 @@ Sistema de pesaje de camiones para la Refinería de La Plata (YPF). Gestiona ór
 
 ## Estado del proyecto
 
-Están implementados **los 78 casos de uso** de la especificación. El detalle caso por caso está en `Docs/Estado implementacion CU.md`.
+Los 78 casos de uso de la especificación tienen pantalla y backend; algunos están parciales. El detalle caso por caso, con lo que falta en cada uno, está en `Docs/Estado implementacion CU.md`.
 
 La integración con básculas y cámaras está **simulada**: el backend usa un Device Connector simulado (`Hardware:Modo = "Simulado"` en `appsettings.json`) y la pantalla de pesadas permite leer el peso de la báscula y detectar la patente con la cámara. Para conectar equipos reales se implementa `IDeviceConnector`.
 
-Lo único que falta es el **inicio de sesión** (con el control de acceso por roles y el doble factor de autenticación que dependen de él). Por ahora la aplicación abre directo en el Panel de Control.
+La aplicación pide **inicio de sesión** (JWT) y muestra solo las pantallas que permiten los roles del usuario (ver [Inicio de sesión y permisos](#inicio-de-sesión-y-permisos)). El doble factor de autenticación queda fuera del alcance de esta versión.
 
 ## Estructura del repositorio
 
@@ -74,14 +74,14 @@ Si da un error de certificado con el driver ODBC 17, agreguen `-C` al comando. A
 
 Es idempotente: se puede ejecutar varias veces sin duplicar datos. Las fechas de las pesadas se calculan respecto del día en que se ejecuta, para que el Dashboard muestre actividad reciente.
 
-Usuarios de demostración (contraseña de ambos: `Demo1234!`):
+Usuarios de demostración para iniciar sesión (contraseña de ambos: `Demo1234!`):
 
-| Usuario | Rol |
-|---|---|
-| `YPF\ADMIN` | Administrador de Sistema |
-| `YPF\OPERADOR` | Gerente de Puesto de Básculas |
+| Usuario | Roles | Pantallas |
+|---|---|---|
+| `YPF\ADMIN` | Los 8 roles | Todas |
+| `YPF\OPERADOR` | Conductor Transporte y Gerente de Puesto de Básculas | Inicio, Gestión de Pesadas y Reportes |
 
-> La aplicación **todavía no pide inicio de sesión**: estos usuarios existen en la base para cuando se implemente. Son solo para demostración; en un entorno real deben eliminarse o cambiarse sus contraseñas.
+> Son solo para demostración; en un entorno real deben eliminarse o cambiarse sus contraseñas.
 
 #### Volver a dejar la demo como nueva
 
@@ -121,7 +121,15 @@ Con LocalDB, el servidor es `(localdb)\MSSQLLocalDB`:
 dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=(localdb)\MSSQLLocalDB;Database=BalanzaCILP;Trusted_Connection=True;TrustServerCertificate=True"
 ```
 
-El nombre de la base (`Database=`) tiene que coincidir con el que se usó al publicar. Luego, desde `Backend/`:
+El nombre de la base (`Database=`) tiene que coincidir con el que se usó al publicar.
+
+La **clave de firma de los tokens** (JWT) tampoco está en el repositorio. Cada uno genera la suya, de al menos 32 caracteres, y la guarda en *user-secrets*. Desde PowerShell (5.1 o 7), en `Backend/`:
+
+```
+$b = New-Object byte[] 48; [Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($b); dotnet user-secrets set "Jwt:Key" ([Convert]::ToBase64String($b))
+```
+
+Luego, desde `Backend/`:
 
 ```
 dotnet run --launch-profile http
@@ -129,7 +137,7 @@ dotnet run --launch-profile http
 
 La API queda disponible en `http://localhost:5033`. En modo desarrollo expone la especificación OpenAPI. La primera vez la compilación puede tardar un par de minutos.
 
-Para comprobar que se conecta a la base, abran `http://localhost:5033/api/Tanques` en el navegador: tiene que devolver los tanques de demostración en formato JSON. Para comprobar el Device Connector, abran `http://localhost:5033/api/Hardware/estado`: tiene que devolver `"modo":"Simulado"` con las básculas y cámaras.
+Todos los endpoints exigen iniciar sesión: si abren `http://localhost:5033/api/Tanques` en el navegador tiene que responder **401**, lo que confirma que la API está levantada. La conexión con la base se comprueba iniciando sesión desde el frontend con un usuario de demostración.
 
 > Usen siempre el perfil `http`. El frontend apunta a `http://localhost:5033`, y con el perfil `https` la redirección a HTTPS hace que el navegador bloquee las peticiones (CORS).
 
@@ -157,10 +165,28 @@ El menú lateral tiene dos grupos:
 
 El detalle de uso está en `Docs/Manual_Usuario_CILP.md`.
 
+## Inicio de sesión y permisos
+
+- **Login:** `POST /api/auth/login` con ID de red y contraseña. Devuelve un token JWT (vigencia de 8 horas, `Jwt:HorasVigencia`) con el usuario, sus roles y sus puntos de menú. El frontend lo guarda en `sessionStorage` (se borra al cerrar la pestaña), lo manda en cada request y vuelve al login si la API responde 401.
+- **Puntos de menú:** hay uno por pantalla (`t_CasoDeUso`). Cada rol tiene puntos de menú asignados y un usuario ve las pantallas de todos sus roles. Inicio la ve cualquier usuario logueado. Planificación Logística tiene dos puntos: Autorizaciones de Descarga y Órdenes de Entrega (una pestaña cada uno).
+- **API:** todos los endpoints exigen un usuario logueado, salvo el login. Cada controller exige su punto de menú (atributo `[Permiso]`, sin el punto responde 403). Las consultas de maestros, el Panel de Control y las pesadas para el panel quedan abiertas a cualquier usuario logueado porque alimentan otras pantallas.
+- **Auditoría:** cada conexión a la base registra al usuario logueado (`dbo.pr_context_save`), así que las columnas `Audit_Insert_User` y `Audit_Update_User` guardan el ID de red de la aplicación. Los scripts que se corren con `sqlcmd` quedan a nombre del usuario de Windows.
+- **Asignación inicial (Entrega 3):** Administrador de Sistema → Puntos de Menú, Roles, Usuarios, Básculas y Dispositivos; Administrador de Negocio → Conductores, Vehículos, Productos, Razones Sociales, Puestos y Tanques; Administrador de Recepción → Autorizaciones de Descarga; Planificador de Descarga y Planificador de Carga → Órdenes de Transporte; Administrador de Despacho → Órdenes de Entrega; Conductor Transporte → Gestión de Pesadas; Gerente de Puesto de Básculas → Reportes.
+- **Qué vive en el script y qué en la pantalla:** la publicación de la base solo **inserta lo que falta** (los puntos de menú, los 8 roles base y la asignación inicial). Los nombres, las bajas, los roles nuevos y las asignaciones se administran desde las pantallas Puntos de Menú, Roles y Permisos y Usuarios, y una nueva publicación no los pisa.
+- **Protecciones:** el rol Administrador de Sistema no se puede eliminar ni perder los puntos Roles y Permisos y Usuarios; esos dos puntos no se pueden dar de baja; no se le puede quitar ese rol al último usuario que lo tiene, y nadie puede darse de baja a sí mismo.
+
+> **Limitación conocida:** los permisos viajan dentro del token. Si se cambian los roles de un usuario, los puntos de menú de un rol, o se da de baja al usuario, el cambio se aplica cuando vuelve a iniciar sesión (como máximo, cuando vence el token a las 8 horas).
+
 ## Solución de problemas
 
 **El backend arranca con el error "Falta ConnectionStrings:DefaultConnection".**
 No se configuró el secreto. Ejecuten el comando `dotnet user-secrets set` del paso 3 desde la carpeta `Backend/`.
+
+**El backend arranca con el error "Falta Jwt:Key".**
+No se configuró la clave de firma de los tokens. Ejecuten el comando `dotnet user-secrets set "Jwt:Key" ...` del paso 3 desde la carpeta `Backend/`.
+
+**El login dice "El usuario no tiene roles asignados".**
+El usuario existe pero no tiene roles activos. Un administrador se los asigna desde la pantalla Usuarios (o corran `seed_demo.sql` para los usuarios de demostración).
 
 **El backend no se conecta a la base ("Cannot open database" o "Invalid object name").**
 Verifiquen que la instancia de SQL Server esté en ejecución y que el nombre de `Server` en la cadena de conexión coincida con su instancia. Verifiquen también que el `Database=` de la cadena sea el mismo en el que se publicó el proyecto. Si las tablas quedaron en `master` y la cadena apunta a `BalanzaCILP` (o al revés), la API da error en todas las pantallas. Para ver dónde están las tablas:

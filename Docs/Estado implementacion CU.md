@@ -10,7 +10,7 @@ Este documento compara los casos de uso especificados (según el documento de En
 | Parcial | El caso de uso tiene pantalla y backend, pero falta parte de su lógica; el detalle indica qué. |
 | Pendiente | No está disponible en la aplicación. |
 
-**Fecha de corte:** 21/11/2026, después de la revisión de lo mergeado en los PR #12, #14 y #15 (issue #17). Actualizar la tabla antes de la entrega final.
+**Fecha de corte:** 21/11/2026, después de la revisión de los PR #12, #14 y #15 (issue #17) y del inicio de sesión con roles (issue #19). Actualizar la tabla antes de la entrega final.
 
 ## 1. Resumen
 
@@ -18,11 +18,11 @@ El documento de Entrega 3 define **78 casos de uso** (CU01 a CU24 y CU030 a CU08
 
 | Estado | Casos de uso | Cantidad |
 |---|---|---|
-| Implementado | CU15-CU24, CU030-CU059, CU077-CU079, CU081-CU083 | 46 |
-| Parcial | CU01-CU14, CU060-CU076, CU080 | 32 |
+| Implementado | CU01-CU24, CU030-CU059, CU077-CU079, CU081-CU083 | 60 |
+| Parcial | CU060-CU076, CU080 | 18 |
 | Pendiente | — | 0 |
 
-Todos los casos de uso tienen pantalla y backend. Los parciales tienen huecos de lógica que se detallan abajo; los más importantes están en la planificación logística (CU060-CU076) y en la seguridad (CU01-CU14), que depende del inicio de sesión (sección 3).
+Todos los casos de uso tienen pantalla y backend. Los parciales tienen huecos de lógica que se detallan abajo, casi todos en la planificación logística (CU060-CU076).
 
 > El conteo por estado debe recalcularse cuando cambie la tabla de la sección 2.
 
@@ -32,9 +32,9 @@ Todos los casos de uso tienen pantalla y backend. Los parciales tienen huecos de
 
 | CU | Nombre | Estado | Observaciones |
 |---|---|---|---|
-| CU01-CU04 | Puntos de Menú (consultar, ver, modificar, eliminar) | Parcial | `PuntosMenuController` y pantalla `PuntosMenuPage` sobre `t_CasoDeUso`, con nombre obligatorio y único (CU03) y baja lógica. **Falta:** el post-deploy (`script_initdata_t_casodeuso.sql`, MERGE con `WHEN NOT MATCHED BY SOURCE THEN DELETE`) restaura en cada publicación los nombres y bajas hechos desde la pantalla. Solo existen 9 puntos de menú (los de Puntos de Menú y Roles): no hay uno por pantalla del sistema, que es lo que necesita el control de acceso por roles. |
-| CU05-CU09 | Roles (consultar, crear, ver, modificar, eliminar) | Parcial | `RolesController` y pantalla `RolesPage` sobre `t_Rol` y `t_RolCasoDeUso`: descripción obligatoria de 3 a 50 caracteres y única, puntos de menú existentes y activos, y no se puede eliminar un rol con usuarios. **Falta:** el post-deploy (`script_initdata_t_rolcasodeuso.sql`, MERGE con DELETE) borra en cada publicación las asignaciones de puntos de menú hechas desde la pantalla, y el de `t_Rol` revierte los cambios en los roles 1 a 8. Solo se pueden asignar los 9 puntos de menú existentes. |
-| CU10-CU14 | Usuarios y autenticación | Parcial | Alta, consulta, modificación y baja lógica; las contraseñas se guardan con `PasswordHasher`. **Falta:** inicio de sesión, asignación de roles a usuarios (no hay API para `t_UsuarioRol`; hoy solo los carga el seed) y unicidad del ID de red. |
+| CU01-CU04 | Puntos de Menú (consultar, ver, modificar, eliminar) | Implementado | `PuntosMenuController` y pantalla `PuntosMenuPage` sobre `t_CasoDeUso`: un punto de menú por pantalla (16), nombre obligatorio y único (CU03) y baja lógica. El post-deploy solo inserta los puntos que faltan, así que los cambios hechos desde la pantalla se conservan. Los puntos Roles y Permisos y Usuarios no se pueden dar de baja. |
+| CU05-CU09 | Roles (consultar, crear, ver, modificar, eliminar) | Implementado | `RolesController` y pantalla `RolesPage` sobre `t_Rol` y `t_RolCasoDeUso`: descripción obligatoria de 3 a 50 caracteres y única, puntos de menú existentes y activos, y no se puede eliminar un rol con usuarios. La asignación inicial sigue la tabla de actores de la Entrega 3 y el post-deploy solo inserta lo que falta. El rol Administrador de Sistema no se puede eliminar ni perder los puntos Roles y Permisos y Usuarios. |
+| CU10-CU14 | Usuarios y autenticación | Implementado | Alta, consulta, modificación y baja lógica con validación de los datos editables (el backend no acepta id, estado ni hash). Contraseñas con `PasswordHasher`, ID de red único (índice `UX_Usuario_IdRed`) y asignación de roles desde la pantalla (`/api/Usuarios/{id}/roles`). Inicio de sesión con JWT (`/api/auth/login`). No se puede quitar el rol Administrador de Sistema al último usuario que lo tiene, ni darse de baja a uno mismo. |
 | CU15-CU19 | Conductores | Implementado | Revisión superficial. |
 | CU20-CU24 | Vehículos | Implementado | Reglas de CU021 y CU023: campos obligatorios, pesos y volumen mayores a cero, peso máximo mayor al peso sin carga, patente de chasis única entre vehículos activos y razón social existente y activa. |
 | CU030-CU034 | Productos | Implementado | Revisión superficial. |
@@ -75,9 +75,9 @@ Autorización de Descarga, Orden de Entrega y Orden de Transporte usan el mismo 
 
 | Funcionalidad | Estado | Observaciones |
 |---|---|---|
-| Autenticación (inicio de sesión) | Pendiente | A implementar antes de la entrega final (Paso 7). El usuario que muestra el menú lateral está escrito a mano. |
-| Control de acceso por roles (RBAC) | Pendiente | Depende del inicio de sesión. Requiere antes: un punto de menú por pantalla, que el post-deploy no borre las asignaciones de roles y una forma de asignar roles a usuarios (ver CU01-CU14). |
-| Doble factor de autenticación (2FA) | Pendiente | Depende del inicio de sesión. |
-| Auditoría por usuario de la aplicación | Pendiente | Ninguna conexión llama a `pr_context_save`: las columnas de auditoría registran el usuario de Windows o SQL, no el de la aplicación. |
+| Autenticación (inicio de sesión) | Implementado | `POST /api/auth/login` valida ID de red y contraseña y devuelve un JWT de 8 horas con el usuario, sus roles y sus puntos de menú. Clave de firma en user-secrets. El frontend guarda la sesión en `sessionStorage`, manda el token en cada request y vuelve al login ante un 401. El menú lateral muestra el usuario logueado y permite cerrar sesión. |
+| Control de acceso por roles (RBAC) | Implementado | Todos los endpoints exigen usuario logueado (salvo el login) y cada controller exige su punto de menú (`[Permiso]`, 403 si falta). El menú y las rutas muestran solo las pantallas permitidas; en Planificación, cada pestaña según su punto. **Limitación:** los permisos viajan en el token, así que un cambio de roles o una baja se aplica al volver a iniciar sesión. |
+| Doble factor de autenticación (2FA) | Pendiente | Fuera del alcance de esta versión. |
+| Auditoría por usuario de la aplicación | Implementado | Un interceptor de EF ejecuta `dbo.pr_context_save` con el ID de red del usuario logueado en cada conexión: `Audit_Insert_User` y `Audit_Update_User` registran al usuario de la aplicación. |
 | Panel de control (Dashboard) | Implementado | Pesadas del día, OT activas, vehículos, conductores y tonelaje neto de las OT cerradas (hoy y total), más el estado de las básculas y cámaras. |
 | Integración con básculas y cámaras (Device Connector, OCR) | Simulado | `IDeviceConnector` con una implementación simulada (`SimulatedDeviceConnector`, `Hardware:Modo = "Simulado"`): la lectura de la báscula se genera a partir de la orden y la cámara "detecta" un camión con orden pendiente. Para hardware real hay que escribir otro conector que implemente la misma interfaz. |

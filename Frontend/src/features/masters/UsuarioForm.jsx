@@ -10,8 +10,31 @@ const UsuarioForm = ({ isOpen, onClose, onSuccess, initialValues }) => {
         apellido: '',
         nroDocumento: '',
         password: '',
-        id_TipoDocumento: '1' // Defaulting to 1 for prototype
+        id_TipoDocumento: ''
     });
+    // Opciones reales de t_TipoDocumentoIdentidad.
+    const [tiposDocumento, setTiposDocumento] = useState([]);
+    // Roles disponibles (activos) y los asignados al usuario (t_UsuarioRol).
+    const [roles, setRoles] = useState([]);
+    const [rolesSeleccionados, setRolesSeleccionados] = useState([]);
+
+    useEffect(() => {
+        if (!isOpen) return;
+        setRolesSeleccionados([]);
+        Promise.all([
+            agent.Roles.list(),
+            initialValues ? agent.Usuarios.roles(initialValues.id_Usuario) : Promise.resolve([]),
+            agent.TiposDocumento.list(),
+        ]).then(([todos, asignados, tipos]) => {
+            setRoles(todos);
+            setRolesSeleccionados(asignados);
+            setTiposDocumento(tipos);
+        }).catch(error => alert(getErrorMessage(error, 'No se pudieron cargar los roles y los tipos de documento.')));
+    }, [isOpen, initialValues]);
+
+    const toggleRol = (idRol) => {
+        setRolesSeleccionados(prev => prev.includes(idRol) ? prev.filter(id => id !== idRol) : [...prev, idRol]);
+    };
 
     useEffect(() => {
         if (isOpen) {
@@ -22,7 +45,7 @@ const UsuarioForm = ({ isOpen, onClose, onSuccess, initialValues }) => {
                     apellido: initialValues.apellido || '',
                     nroDocumento: initialValues.nroDocumento || '',
                     password: '',
-                    id_TipoDocumento: initialValues.id_TipoDocumento || '1'
+                    id_TipoDocumento: initialValues.id_TipoDocumento ? String(initialValues.id_TipoDocumento) : ''
                 });
             } else {
                 setFormData({
@@ -31,7 +54,7 @@ const UsuarioForm = ({ isOpen, onClose, onSuccess, initialValues }) => {
                     apellido: '',
                     nroDocumento: '',
                     password: '',
-                    id_TipoDocumento: '1'
+                    id_TipoDocumento: ''
                 });
             }
         }
@@ -46,17 +69,25 @@ const UsuarioForm = ({ isOpen, onClose, onSuccess, initialValues }) => {
         e.preventDefault();
         setLoading(true);
         try {
+            // Solo los datos editables: el backend no acepta id, activo ni hash.
             const payload = {
-                ...formData,
+                idRed: formData.idRed,
+                nombre: formData.nombre,
+                apellido: formData.apellido,
+                nroDocumento: formData.nroDocumento,
                 id_TipoDocumento: parseInt(formData.id_TipoDocumento),
-                id_Usuario: initialValues ? initialValues.id_Usuario : 0
+                password: formData.password || null,
             };
 
+            let idUsuario;
             if (initialValues) {
                 await agent.Usuarios.update(initialValues.id_Usuario, payload);
+                idUsuario = initialValues.id_Usuario;
             } else {
-                await agent.Usuarios.create(payload);
+                const creado = await agent.Usuarios.create(payload);
+                idUsuario = creado.id_Usuario;
             }
+            await agent.Usuarios.asignarRoles(idUsuario, rolesSeleccionados);
             onSuccess();
             onClose();
         } catch (error) {
@@ -131,7 +162,23 @@ const UsuarioForm = ({ isOpen, onClose, onSuccess, initialValues }) => {
                             />
                         </div>
 
-                        <div className="col-span-2">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Tipo de Documento</label>
+                            <select
+                                name="id_TipoDocumento"
+                                value={formData.id_TipoDocumento}
+                                onChange={handleChange}
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border bg-white"
+                                required
+                            >
+                                <option value="">Seleccione...</option>
+                                {tiposDocumento.map(t => (
+                                    <option key={t.id_TipoDocumentoIdentidad} value={t.id_TipoDocumentoIdentidad}>{t.descripcion}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div>
                             <label className="block text-sm font-medium text-gray-700">Nro Documento</label>
                             <input 
                                 type="text" 
@@ -160,6 +207,30 @@ const UsuarioForm = ({ isOpen, onClose, onSuccess, initialValues }) => {
                                 required={!initialValues}
                             />
                         </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Roles asignados ({rolesSeleccionados.length})
+                        </label>
+                        <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-md divide-y divide-gray-100">
+                            {roles.map((r) => (
+                                <label key={r.id_Rol} className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-gray-50">
+                                    <input
+                                        type="checkbox"
+                                        checked={rolesSeleccionados.includes(r.id_Rol)}
+                                        onChange={() => toggleRol(r.id_Rol)}
+                                    />
+                                    <span>{r.descripcion}</span>
+                                </label>
+                            ))}
+                            {roles.length === 0 && (
+                                <p className="px-3 py-2 text-sm text-gray-400">No hay roles disponibles.</p>
+                            )}
+                        </div>
+                        {rolesSeleccionados.length === 0 && (
+                            <p className="text-xs text-amber-600 mt-1">Sin roles, el usuario no podrá iniciar sesión.</p>
+                        )}
                     </div>
 
                     <div className="flex justify-end pt-4 gap-3">
