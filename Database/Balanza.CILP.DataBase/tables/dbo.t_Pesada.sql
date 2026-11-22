@@ -18,6 +18,11 @@
 );
 GO
 
+-- Una planificación tiene a lo sumo una TARA y un BRUTO (evita pesadas duplicadas por registros simultáneos).
+CREATE UNIQUE NONCLUSTERED INDEX [UX_Pesada_Planificacion_TipoPesada]
+	ON [dbo].[t_Pesada] ([Id_Planificacion], [Id_TipoPesada]);
+GO
+
 CREATE TRIGGER tg_Pesada_u
 ON [dbo].[t_Pesada]
 FOR UPDATE AS
