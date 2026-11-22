@@ -57,6 +57,9 @@ const Usuarios = {
     roles: (id) => requests.get(`/Usuarios/${id}/roles`),
     asignarRoles: (id, roles) => requests.put(`/Usuarios/${id}/roles`, { roles }),
 };
+const TiposDocumento = {
+    list: () => requests.get('/TiposDocumento'),
+};
 const Auth = {
     login: (idRed, password) => requests.post(URL_LOGIN, { idRed, password }),
 };
@@ -120,6 +123,7 @@ export default {
     RazonesSociales,
     Basculas,
     Usuarios,
+    TiposDocumento,
     Tanques,
     DispositivosDetectores,
     Puestos,

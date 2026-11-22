@@ -10,8 +10,10 @@ const UsuarioForm = ({ isOpen, onClose, onSuccess, initialValues }) => {
         apellido: '',
         nroDocumento: '',
         password: '',
-        id_TipoDocumento: '1' // Defaulting to 1 for prototype
+        id_TipoDocumento: ''
     });
+    // Opciones reales de t_TipoDocumentoIdentidad.
+    const [tiposDocumento, setTiposDocumento] = useState([]);
     // Roles disponibles (activos) y los asignados al usuario (t_UsuarioRol).
     const [roles, setRoles] = useState([]);
     const [rolesSeleccionados, setRolesSeleccionados] = useState([]);
@@ -22,10 +24,12 @@ const UsuarioForm = ({ isOpen, onClose, onSuccess, initialValues }) => {
         Promise.all([
             agent.Roles.list(),
             initialValues ? agent.Usuarios.roles(initialValues.id_Usuario) : Promise.resolve([]),
-        ]).then(([todos, asignados]) => {
+            agent.TiposDocumento.list(),
+        ]).then(([todos, asignados, tipos]) => {
             setRoles(todos);
             setRolesSeleccionados(asignados);
-        }).catch(error => alert(getErrorMessage(error, 'No se pudieron cargar los roles.')));
+            setTiposDocumento(tipos);
+        }).catch(error => alert(getErrorMessage(error, 'No se pudieron cargar los roles y los tipos de documento.')));
     }, [isOpen, initialValues]);
 
     const toggleRol = (idRol) => {
@@ -41,7 +45,7 @@ const UsuarioForm = ({ isOpen, onClose, onSuccess, initialValues }) => {
                     apellido: initialValues.apellido || '',
                     nroDocumento: initialValues.nroDocumento || '',
                     password: '',
-                    id_TipoDocumento: initialValues.id_TipoDocumento || '1'
+                    id_TipoDocumento: initialValues.id_TipoDocumento ? String(initialValues.id_TipoDocumento) : ''
                 });
             } else {
                 setFormData({
@@ -50,7 +54,7 @@ const UsuarioForm = ({ isOpen, onClose, onSuccess, initialValues }) => {
                     apellido: '',
                     nroDocumento: '',
                     password: '',
-                    id_TipoDocumento: '1'
+                    id_TipoDocumento: ''
                 });
             }
         }
@@ -158,7 +162,23 @@ const UsuarioForm = ({ isOpen, onClose, onSuccess, initialValues }) => {
                             />
                         </div>
 
-                        <div className="col-span-2">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Tipo de Documento</label>
+                            <select
+                                name="id_TipoDocumento"
+                                value={formData.id_TipoDocumento}
+                                onChange={handleChange}
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border bg-white"
+                                required
+                            >
+                                <option value="">Seleccione...</option>
+                                {tiposDocumento.map(t => (
+                                    <option key={t.id_TipoDocumentoIdentidad} value={t.id_TipoDocumentoIdentidad}>{t.descripcion}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div>
                             <label className="block text-sm font-medium text-gray-700">Nro Documento</label>
                             <input 
                                 type="text" 
