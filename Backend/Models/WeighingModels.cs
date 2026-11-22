@@ -68,5 +68,8 @@ namespace Backend.Models
 
         [Column("Activo_Bascula")]
         public bool Activo { get; set; } = true;
+
+        // El certificado (INTI) es válido hasta el día de vencimiento inclusive.
+        public bool CertificadoVigente(DateTime hoy) => VencimientoCertificado.Date >= hoy.Date;
     }
 }

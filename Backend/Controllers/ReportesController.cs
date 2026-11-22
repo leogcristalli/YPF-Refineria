@@ -8,6 +8,11 @@ namespace Backend.Controllers
     [ApiController]
     public class ReportesController : ControllerBase
     {
+        // Valores de los datos de sistema (t_EstadoOrdenTransporte, t_TipoPesada).
+        private const byte OtEjecutado = 5;
+        private const byte PesadaTara = 1;
+        private const byte PesadaBruto = 2;
+
         private readonly AppDbContext _context;
 
         public ReportesController(AppDbContext context)
@@ -125,7 +130,8 @@ namespace Backend.Controllers
             });
         }
 
-        // KPIs del dashboard. Cantidad_Pesada está en kg; el tonelaje se informa en toneladas.
+        // KPIs del dashboard. El tonelaje es el peso NETO (bruto - tara) de las OT cerradas
+        // (estado Ejecutado); "hoy" toma las que se cerraron hoy. Se informa en toneladas.
         [HttpGet("kpis")]
         public async Task<ActionResult> GetKpis()
         {
@@ -133,8 +139,28 @@ namespace Backend.Controllers
             var manana = hoy.AddDays(1);
 
             var pesadasHoy = _context.Pesadas.Where(p => p.Fecha >= hoy && p.Fecha < manana);
-            var kgHoy = await pesadasHoy.SumAsync(p => (decimal?)p.Cantidad) ?? 0;
-            var kgTotal = await _context.Pesadas.SumAsync(p => (decimal?)p.Cantidad) ?? 0;
+
+            var cerradas = await _context.Planificaciones
+                .AsNoTracking()
+                .Where(p => p.OrdenTransporte!.Activo
+                    && p.OrdenTransporte.Id_EstadoOrdenTransporte == OtEjecutado
+                    && p.OrdenTransporte.FechaFinEjecucion != null)
+                .Select(p => new
+                {
+                    Cierre = p.OrdenTransporte!.FechaFinEjecucion!.Value,
+                    Bruto = _context.Pesadas.Where(x => x.Id_Planificacion == p.Id_Planificacion && x.Id_TipoPesada == PesadaBruto)
+                        .Sum(x => (decimal?)x.Cantidad),
+                    Tara = _context.Pesadas.Where(x => x.Id_Planificacion == p.Id_Planificacion && x.Id_TipoPesada == PesadaTara)
+                        .Sum(x => (decimal?)x.Cantidad)
+                })
+                .ToListAsync();
+
+            var netos = cerradas
+                .Where(c => c.Bruto.HasValue && c.Tara.HasValue)
+                .Select(c => new { c.Cierre, Neto = c.Bruto!.Value - c.Tara!.Value })
+                .ToList();
+            var kgHoy = netos.Where(n => n.Cierre >= hoy && n.Cierre < manana).Sum(n => n.Neto);
+            var kgTotal = netos.Sum(n => n.Neto);
 
             return Ok(new
             {

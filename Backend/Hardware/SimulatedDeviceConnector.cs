@@ -28,7 +28,7 @@ namespace Backend.Hardware
 
         // Una báscula con el certificado vencido no se considera operativa.
         public string EstadoBascula(Bascula bascula) =>
-            bascula.VencimientoCertificado.Date < DateTime.Today ? EstadoEquipo.CertificadoVencido : EstadoEquipo.Online;
+            bascula.CertificadoVigente(DateTime.Today) ? EstadoEquipo.Online : EstadoEquipo.CertificadoVencido;
 
         public string EstadoDispositivo(DispositivoDetector dispositivo) => EstadoEquipo.Online;
     }
