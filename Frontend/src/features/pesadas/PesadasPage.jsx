@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
     Scale, CheckCircle2, Loader2, AlertCircle,
     Clock, Truck, Plus, Search, Eye, X, Save,
@@ -18,6 +19,14 @@ const Toast = ({ message, type, onDone }) => {
 };
 
 // ─────────── Modal Ticket de Pesada (CU079) ───────────
+// Báscula de la pesada, o "Ingreso manual" si se registró sin báscula.
+const origenPesada = (p) => {
+    if (!p?.basculaDescripcion) return 'Ingreso manual';
+    return p.esIngresoManual ? `${p.basculaDescripcion} (ingreso manual)` : p.basculaDescripcion;
+};
+
+// Se renderiza en un portal directo en <body>: el CSS de impresión (index.css) oculta todo
+// lo demás y deja solo el área del ticket.
 const TicketModal = ({ isOpen, onClose, ticketData }) => {
     if (!isOpen || !ticketData) return null;
 
@@ -25,11 +34,11 @@ const TicketModal = ({ isOpen, onClose, ticketData }) => {
         window.print();
     };
 
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[92vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-200">
+    return createPortal(
+        <div className="ticket-print-root fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+            <div className="ticket-print-card bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[92vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-200">
                 {/* Header Ticket */}
-                <div className="bg-slate-900 px-6 py-5 flex justify-between items-center rounded-t-2xl text-white">
+                <div className="ticket-no-print bg-slate-900 px-6 py-5 flex justify-between items-center rounded-t-2xl text-white">
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-white/10 rounded-xl">
                             <Scale size={20} className="text-blue-400" />
@@ -85,24 +94,20 @@ const TicketModal = ({ isOpen, onClose, ticketData }) => {
 
                     {/* Detalle de Pesadas */}
                     <div className="space-y-2 border-b border-dashed border-slate-300 pb-4 font-mono text-xs">
-                        <div className="flex justify-between items-center py-1">
-                            <span className="text-slate-600 font-sans font-semibold">TARA:</span>
-                            <div className="text-right">
-                                <span className="font-bold text-slate-800 text-sm">{ticketData.pesadaTara?.cantidad?.toLocaleString('es-AR')} kg</span>
-                                <p className="text-[10px] text-slate-400">
-                                    {ticketData.pesadaTara?.fecha ? new Date(ticketData.pesadaTara.fecha).toLocaleTimeString('es-AR') : '—'} · Báscula #{ticketData.pesadaTara?.bascula ?? '1'}
-                                </p>
+                        {[['TARA', ticketData.pesadaTara], ['BRUTO', ticketData.pesadaBruto]].map(([titulo, p]) => (
+                            <div key={titulo} className="flex justify-between items-center py-1">
+                                <span className="text-slate-600 font-sans font-semibold">{titulo}:</span>
+                                <div className="text-right">
+                                    <span className="font-bold text-slate-800 text-sm">{p?.cantidad?.toLocaleString('es-AR')} kg</span>
+                                    <p className="text-[10px] text-slate-400">
+                                        {p?.fecha ? new Date(p.fecha).toLocaleTimeString('es-AR') : '—'} · {origenPesada(p)}
+                                    </p>
+                                    {p?.esIngresoManual && p?.motivoIngresoManual && (
+                                        <p className="text-[10px] text-amber-700 font-sans">Motivo: {p.motivoIngresoManual}</p>
+                                    )}
+                                </div>
                             </div>
-                        </div>
-                        <div className="flex justify-between items-center py-1">
-                            <span className="text-slate-600 font-sans font-semibold">BRUTO:</span>
-                            <div className="text-right">
-                                <span className="font-bold text-slate-800 text-sm">{ticketData.pesadaBruto?.cantidad?.toLocaleString('es-AR')} kg</span>
-                                <p className="text-[10px] text-slate-400">
-                                    {ticketData.pesadaBruto?.fecha ? new Date(ticketData.pesadaBruto.fecha).toLocaleTimeString('es-AR') : '—'} · Báscula #{ticketData.pesadaBruto?.bascula ?? '1'}
-                                </p>
-                            </div>
-                        </div>
+                        ))}
                     </div>
 
                     {/* Resumen de Peso Neto */}
@@ -131,7 +136,7 @@ const TicketModal = ({ isOpen, onClose, ticketData }) => {
                     </div>
 
                     {/* Acciones */}
-                    <div className="flex gap-3 pt-2">
+                    <div className="ticket-no-print flex gap-3 pt-2">
                         <button
                             onClick={onClose}
                             className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-semibold text-sm hover:bg-slate-50 transition-colors"
@@ -147,64 +152,84 @@ const TicketModal = ({ isOpen, onClose, ticketData }) => {
                     </div>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 
 // ─────────── Modal: Registrar Pesada (CU078) ───────────
+const LARGO_MAXIMO_MOTIVO = 300;   // t_Pesada.MotivoIngresoManual_Pesada
+
+const FORM_VACIO = {
+    Id_Planificacion: '',
+    Cantidad: '',
+    Id_Bascula: '',
+    EsIngresoManual: false,
+    MotivoIngresoManual: '',
+};
+
 const RegistrarPesadaModal = ({ isOpen, onClose, onSuccess, initialPlanId }) => {
     const [planificaciones, setPlanificaciones] = useState([]);
     const [basculas, setBasculas] = useState([]);
-    const [formData, setFormData] = useState({
-        Id_Planificacion: '',
-        Cantidad: '',
-        Id_Bascula: '1',
-        EsIngresoManual: false,
-        MotivoIngresoManual: '',
-    });
+    const [formData, setFormData] = useState(FORM_VACIO);
+    // Peso que leyó la báscula para la báscula y la orden elegidas. Si el peso del formulario
+    // no es exactamente esta lectura (se tipeó o se editó), la pesada es manual.
+    const [lectura, setLectura] = useState(null);
     const [loading, setLoading] = useState(false);
     const [loadingOpts, setLoadingOpts] = useState(true);
     const [leyendo, setLeyendo] = useState(false);
 
     useEffect(() => {
-        if (isOpen) {
-            setLoadingOpts(true);
-            Promise.all([
-                agent.Planificaciones.list(),
-                agent.Basculas.list(),
-            ]).then(([plans, bascs]) => {
-                const activePlans = plans.filter(p => p.activo !== false);
-                setPlanificaciones(activePlans);
-                setBasculas(bascs);
-            }).catch(console.error).finally(() => setLoadingOpts(false));
+        if (!isOpen) return;
 
-            setFormData({
-                Id_Planificacion: initialPlanId ? String(initialPlanId) : '',
-                Cantidad: '',
-                Id_Bascula: '1',
-                EsIngresoManual: false,
-                MotivoIngresoManual: ''
-            });
-        }
+        setLectura(null);
+        setFormData({ ...FORM_VACIO, Id_Planificacion: initialPlanId ? String(initialPlanId) : '' });
+        setLoadingOpts(true);
+        Promise.all([
+            agent.Planificaciones.pendientes(),
+            agent.Basculas.list(),
+        ]).then(([plans, bascs]) => {
+            setPlanificaciones(plans);
+            setBasculas(bascs);
+            // Báscula por defecto: la primera activa (no un id fijo).
+            setFormData(prev => ({
+                ...prev,
+                Id_Bascula: prev.Id_Bascula || (bascs.length > 0 ? String(bascs[0].id_Bascula) : ''),
+            }));
+        }).catch(err => {
+            alert(getErrorMessage(err, 'No se pudieron cargar las órdenes y las básculas.'));
+        }).finally(() => setLoadingOpts(false));
     }, [isOpen, initialPlanId]);
 
     if (!isOpen) return null;
 
+    const coincideLectura = lectura != null && formData.Cantidad !== '' && Number(formData.Cantidad) === lectura;
+    // Peso tipeado o editado: la pesada es manual sí o sí.
+    const forzadoManual = formData.Cantidad !== '' && !coincideLectura;
+    const esManual = forzadoManual || formData.EsIngresoManual;
+
     const handleChange = e => {
         const { name, value, type, checked } = e.target;
+        // La lectura corresponde a una báscula y a una orden: si cambia alguna, deja de valer.
+        if (name === 'Id_Planificacion' || name === 'Id_Bascula') setLectura(null);
         setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
     };
 
-    // Lee el peso desde la báscula (Device Connector). La pesada queda como automática, no manual.
+    // Lee el peso desde la báscula (Device Connector). Mientras no se edite, la pesada es automática.
     const handleLeerBascula = async () => {
         if (!formData.Id_Planificacion) {
             alert('Seleccione primero la Orden de Transporte.');
             return;
         }
+        if (!formData.Id_Bascula) {
+            alert('Seleccione la báscula a leer.');
+            return;
+        }
         setLeyendo(true);
         try {
-            const lectura = await agent.Hardware.leerPeso(formData.Id_Bascula, formData.Id_Planificacion);
-            setFormData(prev => ({ ...prev, Cantidad: String(lectura.pesoKg), EsIngresoManual: false, MotivoIngresoManual: '' }));
+            const resultado = await agent.Hardware.leerPeso(formData.Id_Bascula, formData.Id_Planificacion);
+            setLectura(resultado.pesoKg);
+            setFormData(prev => ({ ...prev, Cantidad: String(resultado.pesoKg), EsIngresoManual: false, MotivoIngresoManual: '' }));
         } catch (err) {
             alert(getErrorMessage(err, 'No se pudo leer la báscula. Puede usar el ingreso manual.'));
         } finally {
@@ -214,33 +239,30 @@ const RegistrarPesadaModal = ({ isOpen, onClose, onSuccess, initialPlanId }) => 
 
     const handleSubmit = async e => {
         e.preventDefault();
-        setLoading(true);
-        const idPlan = parseInt(formData.Id_Planificacion);
-        try {
-            let esBruto = false;
-            let pesoNetoBruto = null;
-            try {
-                const previas = await agent.Pesadas.byPlanificacion(idPlan);
-                esBruto = Array.isArray(previas) && previas.length >= 1;
-            } catch (_) { /* si falla, asumimos TARA */ }
+        const motivo = formData.MotivoIngresoManual.trim();
+        if (esManual && !motivo) {
+            alert('El ingreso manual requiere indicar el motivo.');
+            return;
+        }
+        if (!esManual && !formData.Id_Bascula) {
+            alert('Una pesada automática requiere la báscula que leyó el peso.');
+            return;
+        }
 
+        setLoading(true);
+        try {
             const result = await agent.Pesadas.create({
-                Id_Planificacion: idPlan,
+                Id_Planificacion: parseInt(formData.Id_Planificacion),
                 Cantidad: parseFloat(formData.Cantidad),
-                Id_Bascula: parseInt(formData.Id_Bascula),
-                EsIngresoManual: formData.EsIngresoManual,
-                MotivoIngresoManual: formData.MotivoIngresoManual,
+                Id_Bascula: formData.Id_Bascula ? parseInt(formData.Id_Bascula) : null,
+                EsIngresoManual: esManual,
+                MotivoIngresoManual: esManual ? motivo : null,
             });
 
-            if (esBruto && result?.pesoNeto != null) {
-                pesoNetoBruto = result.pesoNeto;
-            }
-
             onSuccess({
-                esBruto,
+                completada: result?.pesoNeto != null,
                 tipoRegistrado: result?.id_TipoPesada,
-                pesoNeto: pesoNetoBruto,
-                warning: result?.warning ?? null,
+                pesoNeto: result?.pesoNeto ?? null,
             });
             onClose();
         } catch (err) {
@@ -290,7 +312,7 @@ const RegistrarPesadaModal = ({ isOpen, onClose, onSuccess, initialPlanId }) => 
                         </select>
                         {!loadingOpts && planificaciones.length === 0 && (
                             <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
-                                <AlertCircle size={12} /> No hay órdenes activas.
+                                <AlertCircle size={12} /> No hay órdenes pendientes de pesaje.
                             </p>
                         )}
                     </div>
@@ -302,7 +324,7 @@ const RegistrarPesadaModal = ({ isOpen, onClose, onSuccess, initialPlanId }) => 
                                 <button
                                     type="button"
                                     onClick={handleLeerBascula}
-                                    disabled={leyendo || formData.EsIngresoManual}
+                                    disabled={leyendo || !formData.Id_Bascula}
                                     className="text-xs font-bold text-blue-600 hover:text-blue-800 disabled:opacity-40 flex items-center gap-1"
                                 >
                                     {leyendo ? <Loader2 size={12} className="animate-spin" /> : <Scale size={12} />}
@@ -313,12 +335,19 @@ const RegistrarPesadaModal = ({ isOpen, onClose, onSuccess, initialPlanId }) => 
                                 type="number"
                                 name="Cantidad"
                                 step="0.01"
+                                min="0.01"
                                 value={formData.Cantidad}
                                 onChange={handleChange}
                                 placeholder="Ej: 24500"
                                 className="w-full p-2.5 border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 outline-none"
                                 required
                             />
+                            {coincideLectura && (
+                                <p className="text-[11px] text-emerald-700 mt-1">Lectura de la báscula: pesada automática.</p>
+                            )}
+                            {forzadoManual && (
+                                <p className="text-[11px] text-amber-700 mt-1">El peso no es una lectura de la báscula: queda como ingreso manual.</p>
+                            )}
                         </div>
                         <div>
                             <label className="block text-sm font-semibold text-slate-700 mb-1.5">Báscula</label>
@@ -328,14 +357,12 @@ const RegistrarPesadaModal = ({ isOpen, onClose, onSuccess, initialPlanId }) => 
                                 onChange={handleChange}
                                 className="w-full p-2.5 border border-slate-200 rounded-xl bg-white text-sm font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 outline-none"
                             >
-                                {basculas.length > 0
-                                    ? basculas.map(b => (
-                                        <option key={b.id_Bascula} value={b.id_Bascula}>
-                                            {b.descripcion || `Báscula #${b.id_Bascula}`}
-                                        </option>
-                                    ))
-                                    : <option value="1">Báscula #01 (default)</option>
-                                }
+                                {basculas.map(b => (
+                                    <option key={b.id_Bascula} value={b.id_Bascula}>
+                                        {b.descripcion || `Báscula #${b.id_Bascula}`}
+                                    </option>
+                                ))}
+                                <option value="">Sin báscula (solo ingreso manual)</option>
                             </select>
                         </div>
                     </div>
@@ -345,23 +372,26 @@ const RegistrarPesadaModal = ({ isOpen, onClose, onSuccess, initialPlanId }) => 
                             type="checkbox"
                             name="EsIngresoManual"
                             id="chkManual"
-                            checked={formData.EsIngresoManual}
+                            checked={esManual}
+                            disabled={forzadoManual}
                             onChange={handleChange}
-                            className="w-4 h-4 text-blue-600 rounded border-slate-300"
+                            className="w-4 h-4 text-blue-600 rounded border-slate-300 disabled:opacity-60"
                         />
                         <label htmlFor="chkManual" className="text-sm font-semibold text-slate-700">Ingreso Manual</label>
                     </div>
 
-                    {formData.EsIngresoManual && (
+                    {esManual && (
                         <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-1.5">Motivo</label>
+                            <label className="block text-sm font-semibold text-slate-700 mb-1.5">Motivo *</label>
                             <textarea
                                 name="MotivoIngresoManual"
                                 value={formData.MotivoIngresoManual}
                                 onChange={handleChange}
                                 rows={2}
+                                maxLength={LARGO_MAXIMO_MOTIVO}
+                                required
                                 className="w-full p-2.5 border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 outline-none resize-none"
-                                placeholder="Motivo del ingreso manual..."
+                                placeholder="Motivo del ingreso manual (obligatorio)..."
                             />
                         </div>
                     )}
@@ -376,7 +406,7 @@ const RegistrarPesadaModal = ({ isOpen, onClose, onSuccess, initialPlanId }) => 
                         </button>
                         <button
                             type="submit"
-                            disabled={loading}
+                            disabled={loading || loadingOpts}
                             className="flex-1 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-sm hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20"
                         >
                             {loading ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
@@ -428,18 +458,16 @@ const PesadasPage = () => {
 
     useEffect(() => { load(); }, []);
 
-    const handleSuccess = ({ esBruto, tipoRegistrado, pesoNeto, warning }) => {
+    const handleSuccess = ({ completada, tipoRegistrado, pesoNeto }) => {
         load();
-        if (esBruto) {
-            const kg = pesoNeto != null ? `${Number(pesoNeto).toLocaleString('es-AR')} kg` : '—';
-            setToast({ message: `✓ Orden completada. Peso neto: ${kg}.`, type: 'success' });
+        // La OT encontrada por patente pudo haber cambiado de estado: se descarta el resultado.
+        setOtFound(null);
+        if (completada) {
+            setToast({ message: `✓ Orden completada. Peso neto: ${Number(pesoNeto).toLocaleString('es-AR')} kg.`, type: 'success' });
         } else {
             const registrada = tipoRegistrado === 2 ? 'BRUTO' : 'TARA';
             const pendiente = tipoRegistrado === 2 ? 'TARA' : 'BRUTO';
             setToast({ message: `✓ Pesada ${registrada} registrada. Aguardando pesada ${pendiente}.`, type: 'info' });
-        }
-        if (warning) {
-            setTimeout(() => setToast({ message: `⚠ ${warning}`, type: 'info' }), 4000);
         }
     };
 
@@ -457,7 +485,7 @@ const PesadasPage = () => {
             setOtFound(ot);
         } catch (err) {
             console.error(err);
-            setSearchPatenteError(`No se encontró ninguna orden de transporte activa para la patente "${patenteSearch.toUpperCase()}".`);
+            setSearchPatenteError(getErrorMessage(err, `No se pudo buscar la orden de la patente "${patenteSearch.toUpperCase()}".`));
         } finally {
             setSearchingPatente(false);
         }
@@ -477,7 +505,8 @@ const PesadasPage = () => {
         }
     };
 
-    // La cámara OCR detecta un camión y se busca su orden, igual que con la búsqueda por patente.
+    // La cámara OCR detecta un camión y el backend devuelve la OT pendiente que le corresponde:
+    // se muestra esa OT (no se vuelve a buscar por patente).
     const handleDetectarCamara = async () => {
         setSearchingPatente(true);
         setSearchPatenteError('');
@@ -488,7 +517,7 @@ const PesadasPage = () => {
             if (!camara) throw new Error('Sin cámara operativa');
             const deteccion = await agent.Hardware.detectarPatente(camara.id_DispositivoDetector);
             setPatenteSearch(deteccion.patente);
-            const ot = await agent.OrdenesTransporte.byPatente(deteccion.patente);
+            const ot = await agent.OrdenesTransporte.details(deteccion.id_OrdenTransporte);
             setOtFound(ot);
         } catch (err) {
             setSearchPatenteError(getErrorMessage(err, 'No se pudo detectar un vehículo con la cámara.'));
