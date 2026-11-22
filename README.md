@@ -12,7 +12,7 @@ Proyecto Final de la carrera de Ingeniería en Sistemas de Información (Univers
 - **Ciclo de vida de las órdenes:** Planificado, Replanificado (con motivo), Ejecución, Definitivo y Anulado, con reglas de modificación según el estado.
 - **Registro de pesadas:** identificación del camión por patente o por cámara OCR (simulada), lectura automática de báscula (simulada) o ingreso manual con motivo, tara y bruto según el tipo de orden, tolerancia por producto, cálculo del neto y ticket imprimible.
 - **Reportes y Panel de Control:** movimientos por período y por producto, duración promedio de las órdenes, ocupación por báscula e indicadores del día, siempre calculados sobre datos reales.
-- **Control de acceso:** inicio de sesión con JWT, roles configurables y permisos por pantalla, aplicados tanto en la API como en la interfaz.
+- **Control de acceso:** inicio de sesión con JWT, roles configurables y permisos por pantalla, aplicados tanto en la API como en la interfaz. Los perfiles administrativos usan además doble factor de autenticación (TOTP con aplicación autenticadora).
 - **Auditoría:** cada alta y modificación registra fecha y usuario de la aplicación.
 - **Administración de maestros:** vehículos, conductores, productos, razones sociales, básculas, tanques, puestos, dispositivos de detección, roles y usuarios.
 
@@ -129,7 +129,9 @@ Usuarios de demostración (contraseña `Demo1234!`):
 ## Documentación
 
 - [Instalación y configuración](Docs/INSTALACION.md): guía completa, permisos, limitaciones conocidas y solución de problemas.
-- [Manual de usuario](Docs/Manual_Usuario_CILP.md): uso de cada pantalla.
+- [Manual de usuario](Docs/Manual_Usuario_CILP.md): uso de cada pantalla. También se muestra dentro de la aplicación, en **Ayuda y Capacitación**.
+- [Cronograma de capacitación](Docs/Cronograma_Capacitacion.md): sesiones por perfil y plan de puesta en marcha. También se muestra en **Ayuda y Capacitación**.
+- [Plan de pruebas](Docs/Plan_de_Pruebas.md): estrategia, pruebas automáticas y casos funcionales y de seguridad.
 - [Especificación funcional](Docs/CUs.md): casos de uso y reglas de negocio.
 - [Justificación de tecnologías](Docs/Justificacion_Tecnologia.md): elección del stack y herramientas para la toma de decisiones.
 - [Diagrama entidad-relación](Docs/DER.png): modelo de datos. Corresponde a una etapa anterior del diseño y puede no coincidir exactamente con el esquema actual; la referencia vigente es `Database/Balanza.CILP.DataBase/tables`.

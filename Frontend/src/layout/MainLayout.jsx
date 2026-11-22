@@ -4,7 +4,7 @@ import {
     Truck, Scale, LayoutDashboard, Users, Package,
     Briefcase, UserCheck, Monitor,
     LogOut, ChevronRight, FileText, BarChart2, Database,
-    Camera, MapPin, ListChecks, Shield
+    Camera, MapPin, ListChecks, Shield, BookOpen
 } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
 import { rutaPermitida } from '../auth/puntosMenu';
@@ -37,6 +37,12 @@ const MainLayout = () => {
                 { path: "/puntos-menu", label: "Puntos de Menú", icon: <ListChecks size={20} /> },
                 { path: "/roles", label: "Roles y Permisos", icon: <Shield size={20} /> },
                 { path: "/usuarios", label: "Usuarios", icon: <UserCheck size={20} /> },
+            ]
+        },
+        {
+            // Sin punto de menú: la ven todos los usuarios.
+            group: "Ayuda", items: [
+                { path: "/ayuda", label: "Ayuda y Capacitación", icon: <BookOpen size={20} /> },
             ]
         }
     ];
