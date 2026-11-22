@@ -27,6 +27,12 @@ namespace Backend.Models
 
         [Column("Activo_Orden")]
         public bool Activo { get; set; } = true;
+
+        [ForeignKey("Id_EstadoOrden")]
+        public virtual EstadoOrden? EstadoOrden { get; set; }
+
+        [ForeignKey("Id_PuestoExpedicionRecepcion")]
+        public virtual PuestoExpedicionRecepcion? Puesto { get; set; }
     }
 
     [Table("t_OrdenDetalle")]
@@ -68,6 +74,10 @@ namespace Backend.Models
 
         [ForeignKey("Id_RazonSocialClienteProveedor")]
         public virtual RazonSocial? ClienteProveedor { get; set; }
+
+        // Tanque de destino (descarga) u origen (entrega) vinculado al detalle.
+        [ForeignKey(nameof(TanqueAlmacenamiento.Id_OrdenDetalle))]
+        public virtual ICollection<TanqueAlmacenamiento> TanquesAlmacenamiento { get; set; } = new List<TanqueAlmacenamiento>();
     }
 
     [Table("t_OrdenTransporte")]
