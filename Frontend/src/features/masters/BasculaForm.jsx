@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save } from 'lucide-react';
 import agent, { getErrorMessage } from '../../api/agent';
+import MensajeError from '../../common/MensajeError';
 
 const BasculaForm = ({ isOpen, onClose, onSuccess, initialValues }) => {
     const [loading, setLoading] = useState(false);
+    // Error a mostrar dentro del formulario (en lugar de setError()).
+    const [error, setError] = useState('');
+    useEffect(() => { if (isOpen) setError(''); }, [isOpen]);
     const [formData, setFormData] = useState({
         descripcion: '',
         lote: '',
@@ -50,23 +54,24 @@ const BasculaForm = ({ isOpen, onClose, onSuccess, initialValues }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setError('');
 
         // El certificado habilitado es obligatorio (no se completa con un valor por defecto)
         if (!formData.certificadoHabilitado.trim()) {
-            alert("El certificado habilitado es obligatorio.");
+            setError("El certificado habilitado es obligatorio.");
             return;
         }
 
         // Validar vencimiento de certificado posterior a hoy
         if (!formData.vencimientoCertificado || formData.vencimientoCertificado <= hoyStr) {
-            alert("La fecha de vencimiento del certificado debe ser posterior a la fecha actual.");
+            setError("La fecha de vencimiento del certificado debe ser posterior a la fecha actual.");
             return;
         }
 
         // Validar formato IPv4
         const ipv4Regex = /^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
         if (!ipv4Regex.test(formData.ip.trim())) {
-            alert("La dirección IP debe tener un formato IPv4 válido (ej. 192.168.1.50).");
+            setError("La dirección IP debe tener un formato IPv4 válido (ej. 192.168.1.50).");
             return;
         }
 
@@ -89,7 +94,7 @@ const BasculaForm = ({ isOpen, onClose, onSuccess, initialValues }) => {
             onClose();
         } catch (error) {
             console.error("Error saving Bascula", error);
-            alert(getErrorMessage(error, "Error al guardar Báscula."));
+            setError(getErrorMessage(error, "Error al guardar Báscula."));
         } finally {
             setLoading(false);
         }
@@ -188,6 +193,9 @@ const BasculaForm = ({ isOpen, onClose, onSuccess, initialValues }) => {
                             />
                         </div>
                     </div>
+
+                    <MensajeError mensaje={error} />
+
 
                     <div className="flex justify-end pt-4 gap-3">
                         <button

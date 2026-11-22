@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save } from 'lucide-react';
 import agent, { getErrorMessage } from '../../api/agent';
+import MensajeError from '../../common/MensajeError';
 
 // Modal de Rol: alta (CU06), detalle (CU07) y modificación (CU08), con asignación de puntos de menú.
 const RolForm = ({ isOpen, onClose, onSuccess, initialValues, readOnly = false }) => {
     const [loading, setLoading] = useState(false);
+    // Error a mostrar dentro del formulario (en lugar de setError()).
+    const [error, setError] = useState('');
+    useEffect(() => { if (isOpen) setError(''); }, [isOpen]);
     const [descripcion, setDescripcion] = useState('');
     const [puntosMenu, setPuntosMenu] = useState([]);   // todos los puntos de menú disponibles
     const [seleccionados, setSeleccionados] = useState([]);
@@ -29,6 +33,7 @@ const RolForm = ({ isOpen, onClose, onSuccess, initialValues, readOnly = false }
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setError('');
         setLoading(true);
         try {
             const payload = {
@@ -42,7 +47,7 @@ const RolForm = ({ isOpen, onClose, onSuccess, initialValues, readOnly = false }
             onClose();
         } catch (error) {
             console.error('Error saving rol', error);
-            alert(getErrorMessage(error, 'Error al guardar el rol.'));
+            setError(getErrorMessage(error, 'Error al guardar el rol.'));
         } finally {
             setLoading(false);
         }
@@ -99,6 +104,9 @@ const RolForm = ({ isOpen, onClose, onSuccess, initialValues, readOnly = false }
                             )}
                         </div>
                     </div>
+
+                    <MensajeError mensaje={error} />
+
 
                     <div className="flex justify-end pt-4 gap-3">
                         <button

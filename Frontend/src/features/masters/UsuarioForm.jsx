@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save } from 'lucide-react';
 import agent, { getErrorMessage } from '../../api/agent';
+import MensajeError from '../../common/MensajeError';
 
 const UsuarioForm = ({ isOpen, onClose, onSuccess, initialValues }) => {
     const [loading, setLoading] = useState(false);
+    // Error a mostrar dentro del formulario (en lugar de setError()).
+    const [error, setError] = useState('');
+    useEffect(() => { if (isOpen) setError(''); }, [isOpen]);
     const [formData, setFormData] = useState({
         idRed: '',
         nombre: '',
@@ -29,7 +33,7 @@ const UsuarioForm = ({ isOpen, onClose, onSuccess, initialValues }) => {
             setRoles(todos);
             setRolesSeleccionados(asignados);
             setTiposDocumento(tipos);
-        }).catch(error => alert(getErrorMessage(error, 'No se pudieron cargar los roles y los tipos de documento.')));
+        }).catch(error => setError(getErrorMessage(error, 'No se pudieron cargar los roles y los tipos de documento.')));
     }, [isOpen, initialValues]);
 
     const toggleRol = (idRol) => {
@@ -67,6 +71,7 @@ const UsuarioForm = ({ isOpen, onClose, onSuccess, initialValues }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setError('');
         setLoading(true);
         try {
             // Solo los datos editables: el backend no acepta id, activo ni hash.
@@ -92,7 +97,7 @@ const UsuarioForm = ({ isOpen, onClose, onSuccess, initialValues }) => {
             onClose();
         } catch (error) {
             console.error("Error saving Usuario", error);
-            alert(getErrorMessage(error, "Error al guardar Usuario."));
+            setError(getErrorMessage(error, "Error al guardar Usuario."));
         } finally {
             setLoading(false);
         }
@@ -232,6 +237,9 @@ const UsuarioForm = ({ isOpen, onClose, onSuccess, initialValues }) => {
                             <p className="text-xs text-amber-600 mt-1">Sin roles, el usuario no podrá iniciar sesión.</p>
                         )}
                     </div>
+
+                    <MensajeError mensaje={error} />
+
 
                     <div className="flex justify-end pt-4 gap-3">
                         <button 

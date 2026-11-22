@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save } from 'lucide-react';
 import agent, { getErrorMessage } from '../../api/agent';
+import MensajeError from '../../common/MensajeError';
 
 const RazonSocialForm = ({ isOpen, onClose, onSuccess, initialValues }) => {
     const [loading, setLoading] = useState(false);
+    // Error a mostrar dentro del formulario (en lugar de setError()).
+    const [error, setError] = useState('');
+    useEffect(() => { if (isOpen) setError(''); }, [isOpen]);
     const [formData, setFormData] = useState({
         descripcion: '',
         cuit: '',
@@ -44,6 +48,7 @@ const RazonSocialForm = ({ isOpen, onClose, onSuccess, initialValues }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setError('');
         setLoading(true);
         try {
             const payload = {
@@ -60,7 +65,7 @@ const RazonSocialForm = ({ isOpen, onClose, onSuccess, initialValues }) => {
             onClose();
         } catch (error) {
             console.error("Error saving Razon Social", error);
-            alert(getErrorMessage(error, "Error al guardar Razón Social."));
+            setError(getErrorMessage(error, "Error al guardar Razón Social."));
         } finally {
             setLoading(false);
         }
@@ -151,6 +156,9 @@ const RazonSocialForm = ({ isOpen, onClose, onSuccess, initialValues }) => {
                             </label>
                         </div>
                     </div>
+
+                    <MensajeError mensaje={error} />
+
 
                     <div className="flex justify-end pt-4 gap-3">
                         <button 
