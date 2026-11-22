@@ -15,7 +15,8 @@
       pruebas y las OT pendientes del seed, aunque se hayan pesado, cancelado o
       editado.
    2. Devuelve a los tanques el volumen que reservaban las autorizaciones de
-      descarga borradas que creó la aplicación (las del seed no reservan volumen).
+      descarga borradas que creó la aplicación (las del seed no reservan volumen,
+      y las anuladas ya lo devolvieron al cancelarse).
    3. Vuelve a correr seed_demo.sql, que repone las OT pendientes con fechas
       relativas a hoy:
         AF789HJ  descarga de crudo con la primera pesada (BRUTO) hecha
@@ -72,6 +73,8 @@ INNER JOIN (
     INNER JOIN dbo.t_OrdenDetalle d ON d.Id_OrdenDetalle = ta.Id_OrdenDetalle
     INNER JOIN dbo.t_Orden o ON o.Id_Orden = d.Id_Orden
     WHERE o.Id_TipoOrden = @Descarga
+      -- Una descarga anulada ya devolvió su volumen al cancelarse: no se descuenta dos veces.
+      AND (o.Activo_Orden = 1 OR o.FechaCierre_Orden IS NOT NULL)
       AND NOT EXISTS (SELECT 1 FROM @RemitosSeed s WHERE s.Remito = d.NroRemito_OrdenDetalle)
     GROUP BY ta.Id_Tanque
 ) x ON x.Id_Tanque = t.Id_Tanque;
