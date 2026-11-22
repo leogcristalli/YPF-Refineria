@@ -8,8 +8,17 @@ const ConductorForm = ({ isOpen, onClose, onSuccess, initialValues }) => {
         nombre: '',
         apellido: '',
         nroDocumento: '',
-        id_TipoDocumento: '1' // Defaulting to 1 for prototype
+        id_TipoDocumento: ''
     });
+    // Opciones reales de t_TipoDocumentoIdentidad (igual que en Usuarios).
+    const [tiposDocumento, setTiposDocumento] = useState([]);
+
+    useEffect(() => {
+        if (!isOpen) return;
+        agent.TiposDocumento.list()
+            .then(setTiposDocumento)
+            .catch(error => alert(getErrorMessage(error, 'No se pudieron cargar los tipos de documento.')));
+    }, [isOpen]);
 
     useEffect(() => {
         if (isOpen) {
@@ -18,14 +27,14 @@ const ConductorForm = ({ isOpen, onClose, onSuccess, initialValues }) => {
                     nombre: initialValues.nombre || '',
                     apellido: initialValues.apellido || '',
                     nroDocumento: initialValues.nroDocumento || '',
-                    id_TipoDocumento: initialValues.id_TipoDocumento || '1'
+                    id_TipoDocumento: initialValues.id_TipoDocumento ? String(initialValues.id_TipoDocumento) : ''
                 });
             } else {
                 setFormData({
                     nombre: '',
                     apellido: '',
                     nroDocumento: '',
-                    id_TipoDocumento: '1'
+                    id_TipoDocumento: ''
                 });
             }
         }
@@ -109,7 +118,23 @@ const ConductorForm = ({ isOpen, onClose, onSuccess, initialValues }) => {
                             />
                         </div>
 
-                        <div className="col-span-2">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Tipo de Documento</label>
+                            <select
+                                name="id_TipoDocumento"
+                                value={formData.id_TipoDocumento}
+                                onChange={handleChange}
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border bg-white"
+                                required
+                            >
+                                <option value="">Seleccione...</option>
+                                {tiposDocumento.map(t => (
+                                    <option key={t.id_TipoDocumentoIdentidad} value={t.id_TipoDocumentoIdentidad}>{t.descripcion}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div>
                             <label className="block text-sm font-medium text-gray-700">Nro Documento</label>
                             <input 
                                 type="text" 
