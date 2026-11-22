@@ -20,6 +20,7 @@ namespace Backend.Controllers
         private const byte PesadaBruto = 2;
         private const byte OtEnEjecucion = 3;
         private const byte OtEjecutado = 5;
+        private const byte EstadoOrdenDefinitivo = 2;   // t_EstadoOrden: la orden cerrada con sus pesadas
 
         private const int LargoMaximoMotivo = 300;   // t_Pesada.MotivoIngresoManual_Pesada
         private static readonly int[] SqlClaveDuplicada = { 2601, 2627 };
@@ -226,6 +227,7 @@ namespace Backend.Controllers
                 ot.FechaFinEjecucion = ahora;
                 orden.Activo = false;
                 orden.FechaCierre = ahora;
+                orden.Id_EstadoOrden = EstadoOrdenDefinitivo;
             }
 
             try
