@@ -1,41 +1,59 @@
 import React from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     Truck, Scale, LayoutDashboard, Users, Package,
     Briefcase, UserCheck, Monitor, Bell, Search,
     Settings, LogOut, ChevronRight, FileText, BarChart2, Database,
     Camera, MapPin, ListChecks, Shield
 } from 'lucide-react';
+import { useAuth } from '../auth/AuthContext';
+import { PUNTOS } from '../auth/puntosMenu';
 
 const MainLayout = () => {
     const location = useLocation();
+    const navigate = useNavigate();
+    const { sesion, logout, tienePunto } = useAuth();
 
     const menuItems = [
         {
             group: "Operaciones", items: [
                 { path: "/", label: "Inicio", icon: <LayoutDashboard size={20} /> },
-                { path: "/pesadas", label: "Gestión de Pesadas", icon: <Scale size={20} /> },
-                { path: "/ordenes-transporte", label: "Órdenes de Transporte", icon: <Truck size={20} /> },
-                { path: "/planificacion", label: "Planificación Logística", icon: <FileText size={20} /> },
-                { path: "/reportes", label: "Reportes & Métricas", icon: <BarChart2 size={20} /> },
+                { path: "/pesadas", puntos: [PUNTOS.PESADAS], label: "Gestión de Pesadas", icon: <Scale size={20} /> },
+                { path: "/ordenes-transporte", puntos: [PUNTOS.ORDENES_TRANSPORTE], label: "Órdenes de Transporte", icon: <Truck size={20} /> },
+                { path: "/planificacion", puntos: [PUNTOS.AUTORIZACIONES_DESCARGA, PUNTOS.ORDENES_ENTREGA], label: "Planificación Logística", icon: <FileText size={20} /> },
+                { path: "/reportes", puntos: [PUNTOS.REPORTES], label: "Reportes & Métricas", icon: <BarChart2 size={20} /> },
             ]
         },
         {
             group: "Administración", items: [
-                { path: "/vehiculos", label: "Vehículos", icon: <Truck size={20} /> },
-                { path: "/conductores", label: "Conductores", icon: <Users size={20} /> },
-                { path: "/productos", label: "Productos", icon: <Package size={20} /> },
-                { path: "/razones-sociales", label: "Razones Sociales", icon: <Briefcase size={20} /> },
-                { path: "/basculas", label: "Básculas", icon: <Monitor size={20} /> },
-                { path: "/tanques", label: "Tanques", icon: <Database size={20} /> },
-                { path: "/puestos", label: "Puestos de Expedición", icon: <MapPin size={20} /> },
-                { path: "/dispositivos", label: "Dispositivos de Detección", icon: <Camera size={20} /> },
-                { path: "/puntos-menu", label: "Puntos de Menú", icon: <ListChecks size={20} /> },
-                { path: "/roles", label: "Roles y Permisos", icon: <Shield size={20} /> },
-                { path: "/usuarios", label: "Usuarios", icon: <UserCheck size={20} /> },
+                { path: "/vehiculos", puntos: [PUNTOS.VEHICULOS], label: "Vehículos", icon: <Truck size={20} /> },
+                { path: "/conductores", puntos: [PUNTOS.CONDUCTORES], label: "Conductores", icon: <Users size={20} /> },
+                { path: "/productos", puntos: [PUNTOS.PRODUCTOS], label: "Productos", icon: <Package size={20} /> },
+                { path: "/razones-sociales", puntos: [PUNTOS.RAZONES_SOCIALES], label: "Razones Sociales", icon: <Briefcase size={20} /> },
+                { path: "/basculas", puntos: [PUNTOS.BASCULAS], label: "Básculas", icon: <Monitor size={20} /> },
+                { path: "/tanques", puntos: [PUNTOS.TANQUES], label: "Tanques", icon: <Database size={20} /> },
+                { path: "/puestos", puntos: [PUNTOS.PUESTOS], label: "Puestos de Expedición", icon: <MapPin size={20} /> },
+                { path: "/dispositivos", puntos: [PUNTOS.DISPOSITIVOS], label: "Dispositivos de Detección", icon: <Camera size={20} /> },
+                { path: "/puntos-menu", puntos: [PUNTOS.PUNTOS_MENU], label: "Puntos de Menú", icon: <ListChecks size={20} /> },
+                { path: "/roles", puntos: [PUNTOS.ROLES], label: "Roles y Permisos", icon: <Shield size={20} /> },
+                { path: "/usuarios", puntos: [PUNTOS.USUARIOS], label: "Usuarios", icon: <UserCheck size={20} /> },
             ]
         }
     ];
+
+    // Solo las pantallas permitidas por los roles del usuario (Inicio no lleva punto: la ven todos).
+    const menuVisible = menuItems
+        .map(group => ({ ...group, items: group.items.filter(item => !item.puntos || tienePunto(...item.puntos)) }))
+        .filter(group => group.items.length > 0);
+
+    const usuario = sesion?.usuario;
+    const iniciales = `${usuario?.nombre?.[0] ?? ''}${usuario?.apellido?.[0] ?? ''}`.toUpperCase();
+    const rolesTexto = (sesion?.roles ?? []).map(r => r.descripcion).join(', ');
+
+    const handleLogout = () => {
+        logout();
+        navigate('/login', { replace: true });
+    };
 
     return (
         <div className="flex h-screen bg-slate-50 font-sans text-slate-900 overflow-hidden">
@@ -52,7 +70,7 @@ const MainLayout = () => {
                 </div>
 
                 <nav className="flex-1 px-4 space-y-8 overflow-y-auto custom-scrollbar pt-2">
-                    {menuItems.map((group, idx) => (
+                    {menuVisible.map((group, idx) => (
                         <div key={idx}>
                             <p className="px-4 text-[11px] font-bold text-slate-500 uppercase tracking-[0.15em] mb-3">{group.group}</p>
                             <div className="space-y-1">
@@ -84,12 +102,12 @@ const MainLayout = () => {
 
                 <div className="p-6 mt-auto border-t border-white/5 bg-black/20">
                     <div className="flex items-center gap-3 mb-6">
-                        <div className="w-10 h-10 rounded-full bg-linear-to-tr from-blue-600 to-blue-400 flex items-center justify-center font-bold text-sm">MC</div>
-                        <div className="flex-1">
-                            <p className="text-xs font-bold leading-none">M. Cristalli</p>
-                            <p className="text-[10px] text-slate-500 mt-1">Administrador</p>
+                        <div className="w-10 h-10 shrink-0 rounded-full bg-linear-to-tr from-blue-600 to-blue-400 flex items-center justify-center font-bold text-sm">{iniciales}</div>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-xs font-bold leading-none truncate" title={usuario?.idRed}>{usuario?.nombre} {usuario?.apellido}</p>
+                            <p className="text-[10px] text-slate-500 mt-1 truncate" title={rolesTexto}>{rolesTexto}</p>
                         </div>
-                        <button className="text-slate-500 hover:text-red-400 transition-colors">
+                        <button onClick={handleLogout} title="Cerrar sesión" className="text-slate-500 hover:text-red-400 transition-colors">
                             <LogOut size={16} />
                         </button>
                     </div>

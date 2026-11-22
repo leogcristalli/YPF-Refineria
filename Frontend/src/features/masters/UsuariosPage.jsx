@@ -14,6 +14,7 @@ const UsuariosPage = () => {
         { header: 'Apellido', field: 'apellido' },
         { header: 'Nombre', field: 'nombre' },
         { header: 'Documento', field: 'nroDocumento' },
+        { header: 'Roles', field: 'roles', render: (u) => (u.roles?.length ? u.roles.join(', ') : 'Sin roles') },
     ];
 
     const handleCreate = () => {
