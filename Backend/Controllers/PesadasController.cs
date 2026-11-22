@@ -34,10 +34,30 @@ namespace Backend.Controllers
         }
 
         // GET: api/Pesadas
+        // Incluye el nombre de la báscula (aunque esté dada de baja); null = ingreso manual sin báscula.
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Pesada>>> GetPesadas()
+        public async Task<ActionResult<IEnumerable<object>>> GetPesadas()
         {
-            return await _context.Pesadas.ToListAsync();
+            var pesadas = await _context.Pesadas
+                .AsNoTracking()
+                .Select(p => new
+                {
+                    p.Id_Pesada,
+                    p.Id_Planificacion,
+                    p.Id_TipoPesada,
+                    p.Fecha,
+                    p.Cantidad,
+                    p.EsIngresoManual,
+                    p.MotivoIngresoManual,
+                    p.Id_Bascula,
+                    BasculaDescripcion = _context.Basculas
+                        .Where(b => b.Id_Bascula == p.Id_Bascula)
+                        .Select(b => b.Descripcion)
+                        .FirstOrDefault()
+                })
+                .ToListAsync();
+
+            return Ok(pesadas);
         }
 
         [HttpGet("{id}")]
