@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Backend.Auth;
 using Backend.Data;
 using Backend.Hardware;
 
@@ -8,6 +9,7 @@ namespace Backend.Controllers
     // Comunicación con básculas y cámaras a través del Device Connector (hoy simulado).
     [Route("api/[controller]")]
     [ApiController]
+    [Permiso(PuntoMenu.Pesadas)]
     public class HardwareController : ControllerBase
     {
         // Valores de los datos de sistema (t_TipoOrden, t_TipoPesada).
@@ -27,6 +29,7 @@ namespace Backend.Controllers
 
         // GET: api/Hardware/estado  (Estado de Hardware del Panel de Control)
         [HttpGet("estado")]
+        [Permiso]   // cualquier usuario logueado
         public async Task<ActionResult<object>> GetEstado()
         {
             var basculas = await _context.Basculas.AsNoTracking()

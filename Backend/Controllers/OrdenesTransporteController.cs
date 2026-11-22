@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Backend.Auth;
 using Backend.Data;
 using Backend.Models;
 
@@ -7,6 +8,7 @@ namespace Backend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Permiso(PuntoMenu.OrdenesTransporte, PuntoMenu.AutorizacionesDescarga, PuntoMenu.OrdenesEntrega)]
     public class OrdenesTransporteController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -40,6 +42,7 @@ namespace Backend.Controllers
         // Solo OT abiertas con pesadas pendientes. Si el camión ya hizo su primera pesada,
         // esa OT va primero (está en medio del circuito); después, la de fecha planificada más antigua.
         [HttpGet("ByPatente/{patente}")]
+        [Permiso(PuntoMenu.Pesadas)]
         public async Task<ActionResult<OrdenTransporte>> GetByPatente(string patente)
         {
             var buscada = patente.Trim();
@@ -66,6 +69,7 @@ namespace Backend.Controllers
 
         // Incluye los datos que muestra la pantalla de pesadas (producto, vehículo, conductor, transportista).
         [HttpGet("{id}")]
+        [Permiso(PuntoMenu.Pesadas, PuntoMenu.OrdenesTransporte, PuntoMenu.AutorizacionesDescarga, PuntoMenu.OrdenesEntrega)]
         public async Task<ActionResult<OrdenTransporte>> Get(long id)
         {
             var item = await _context.OrdenTransportes
@@ -91,6 +95,9 @@ namespace Backend.Controllers
                     .FirstOrDefaultAsync(t => t.Id_OrdenTransporte == id);
 
                 if (transporte == null) return NotFound();
+
+                var tipoOrden = transporte.OrdenDetalle?.Orden?.Id_TipoOrden ?? TipoOrdenEntrega;
+                if (!PuedeOperar(tipoOrden)) return SinPermisoTipo(tipoOrden);
 
                 // 1. Update Orden
                 if (transporte.OrdenDetalle?.Orden != null)
@@ -135,6 +142,17 @@ namespace Backend.Controllers
 
         // Libera el volumen reservado en el tanque cuando una descarga abierta se cancela o elimina.
         // No hace nada si la orden ya está cerrada o cancelada (el volumen ya fue consumido o liberado).
+        // Órdenes de Transporte opera los dos tipos; Autorizaciones de Descarga y Órdenes de
+        // Entrega, solo el suyo (pestañas de Planificación Logística).
+        private bool PuedeOperar(byte tipoOrden) =>
+            User.TienePunto(PuntoMenu.OrdenesTransporte)
+            || User.TienePunto(tipoOrden == TipoOrdenDescarga ? PuntoMenu.AutorizacionesDescarga : PuntoMenu.OrdenesEntrega);
+
+        private static ObjectResult SinPermisoTipo(byte tipoOrden) =>
+            Permisos.Prohibido(tipoOrden == TipoOrdenDescarga
+                ? "No tiene permiso para operar autorizaciones de descarga."
+                : "No tiene permiso para operar órdenes de entrega.");
+
         private async Task LiberarTanqueAsync(OrdenDetalle? detalle)
         {
             if (detalle?.Orden == null || !detalle.Orden.Activo || detalle.Orden.Id_TipoOrden != TipoOrdenDescarga)
@@ -163,6 +181,9 @@ namespace Backend.Controllers
                 .FirstOrDefaultAsync(t => t.Id_OrdenTransporte == id);
 
             if (transporte == null) return NotFound();
+
+            var tipoOrden = transporte.OrdenDetalle?.Orden?.Id_TipoOrden ?? TipoOrdenEntrega;
+            if (!PuedeOperar(tipoOrden)) return SinPermisoTipo(tipoOrden);
 
             if (transporte.Activo == false)
                 return BadRequest("La orden ya está cancelada.");
@@ -201,6 +222,9 @@ namespace Backend.Controllers
 
             if (transporte == null) return NotFound();
 
+            var tipoOrden = transporte.OrdenDetalle?.Orden?.Id_TipoOrden ?? TipoOrdenEntrega;
+            if (!PuedeOperar(tipoOrden)) return SinPermisoTipo(tipoOrden);
+
             // 0. Liberar y eliminar el vínculo con el tanque (si no, la baja falla por clave foránea)
             if (transporte.OrdenDetalle != null)
             {
@@ -237,6 +261,9 @@ namespace Backend.Controllers
         [HttpPost]
         public async Task<ActionResult<OrdenTransporte>> Post(OrdenTransporteCreationDto dto)
         {
+            var tipoNueva = dto.Id_TipoOrden > 0 ? dto.Id_TipoOrden : TipoOrdenEntrega;
+            if (!PuedeOperar(tipoNueva)) return SinPermisoTipo(tipoNueva);
+
             // Flujo provisorio: se rehace en la semana 2 con Autorización de Descarga y Orden de Entrega.
             // Mientras tanto se completan las columnas obligatorias que el formulario no pide con
             // valores por defecto, para que el alta no falle.

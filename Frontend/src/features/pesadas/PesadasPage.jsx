@@ -178,10 +178,13 @@ const RegistrarPesadaModal = ({ isOpen, onClose, onSuccess, initialPlanId }) => 
     const [loading, setLoading] = useState(false);
     const [loadingOpts, setLoadingOpts] = useState(true);
     const [leyendo, setLeyendo] = useState(false);
+    // Error a mostrar dentro del modal (fuera de tolerancia, báscula vencida, etc.).
+    const [error, setError] = useState('');
 
     useEffect(() => {
         if (!isOpen) return;
 
+        setError('');
         setLectura(null);
         setFormData({ ...FORM_VACIO, Id_Planificacion: initialPlanId ? String(initialPlanId) : '' });
         setLoadingOpts(true);
@@ -197,7 +200,7 @@ const RegistrarPesadaModal = ({ isOpen, onClose, onSuccess, initialPlanId }) => 
                 Id_Bascula: prev.Id_Bascula || (bascs.length > 0 ? String(bascs[0].id_Bascula) : ''),
             }));
         }).catch(err => {
-            alert(getErrorMessage(err, 'No se pudieron cargar las órdenes y las básculas.'));
+            setError(getErrorMessage(err, 'No se pudieron cargar las órdenes y las básculas.'));
         }).finally(() => setLoadingOpts(false));
     }, [isOpen, initialPlanId]);
 
@@ -212,17 +215,19 @@ const RegistrarPesadaModal = ({ isOpen, onClose, onSuccess, initialPlanId }) => 
         const { name, value, type, checked } = e.target;
         // La lectura corresponde a una báscula y a una orden: si cambia alguna, deja de valer.
         if (name === 'Id_Planificacion' || name === 'Id_Bascula') setLectura(null);
+        setError('');
         setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
     };
 
     // Lee el peso desde la báscula (Device Connector). Mientras no se edite, la pesada es automática.
     const handleLeerBascula = async () => {
+        setError('');
         if (!formData.Id_Planificacion) {
-            alert('Seleccione primero la Orden de Transporte.');
+            setError('Seleccione primero la Orden de Transporte.');
             return;
         }
         if (!formData.Id_Bascula) {
-            alert('Seleccione la báscula a leer.');
+            setError('Seleccione la báscula a leer.');
             return;
         }
         setLeyendo(true);
@@ -231,7 +236,7 @@ const RegistrarPesadaModal = ({ isOpen, onClose, onSuccess, initialPlanId }) => 
             setLectura(resultado.pesoKg);
             setFormData(prev => ({ ...prev, Cantidad: String(resultado.pesoKg), EsIngresoManual: false, MotivoIngresoManual: '' }));
         } catch (err) {
-            alert(getErrorMessage(err, 'No se pudo leer la báscula. Puede usar el ingreso manual.'));
+            setError(getErrorMessage(err, 'No se pudo leer la báscula. Puede usar el ingreso manual.'));
         } finally {
             setLeyendo(false);
         }
@@ -239,13 +244,14 @@ const RegistrarPesadaModal = ({ isOpen, onClose, onSuccess, initialPlanId }) => 
 
     const handleSubmit = async e => {
         e.preventDefault();
+        setError('');
         const motivo = formData.MotivoIngresoManual.trim();
         if (esManual && !motivo) {
-            alert('El ingreso manual requiere indicar el motivo.');
+            setError('El ingreso manual requiere indicar el motivo.');
             return;
         }
         if (!esManual && !formData.Id_Bascula) {
-            alert('Una pesada automática requiere la báscula que leyó el peso.');
+            setError('Una pesada automática requiere la báscula que leyó el peso.');
             return;
         }
 
@@ -267,7 +273,7 @@ const RegistrarPesadaModal = ({ isOpen, onClose, onSuccess, initialPlanId }) => 
             onClose();
         } catch (err) {
             console.error(err);
-            alert(getErrorMessage(err, 'Error al registrar la pesada.'));
+            setError(getErrorMessage(err, 'Error al registrar la pesada.'));
         } finally {
             setLoading(false);
         }
@@ -393,6 +399,13 @@ const RegistrarPesadaModal = ({ isOpen, onClose, onSuccess, initialPlanId }) => 
                                 className="w-full p-2.5 border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 outline-none resize-none"
                                 placeholder="Motivo del ingreso manual (obligatorio)..."
                             />
+                        </div>
+                    )}
+
+                    {error && (
+                        <div role="alert" className="text-sm text-red-700 bg-red-50 border border-red-100 rounded-xl p-3 flex items-start gap-2">
+                            <AlertCircle size={16} className="shrink-0 mt-0.5" />
+                            <span>{error}</span>
                         </div>
                     )}
 

@@ -13,8 +13,9 @@
  desde la aplicación. Todas las empresas, CUITs y personas son ficticias.
 
  Usuarios de demo (contraseña de ambos: Demo1234!):
-   YPF\ADMIN     -> rol 1 Administrador de Sistema
-   YPF\OPERADOR  -> rol 8 Gerente de Puesto de Básculas
+   YPF\ADMIN     -> los 8 roles base (ve todas las pantallas)
+   YPF\OPERADOR  -> rol 7 Conductor Transporte (Gestión de Pesadas) y
+                    rol 8 Gerente de Puesto de Básculas (Reportes)
  El hash es formato ASP.NET Core Identity v3 (PasswordHasher, PBKDF2-SHA512),
  el mismo que usa UsuariosController. SOLO para demo.
 
@@ -155,7 +156,11 @@ WHERE NOT EXISTS (SELECT 1 FROM dbo.t_Usuario u WHERE u.IdRed_Usuario = v.IdRed)
 
 INSERT INTO dbo.t_UsuarioRol (Id_Usuario, Id_Rol)
 SELECT u.Id_Usuario, v.IdRol
-FROM (VALUES ('YPF\ADMIN', 1), ('YPF\OPERADOR', 8)) v (IdRed, IdRol)
+FROM (VALUES
+     ('YPF\ADMIN', 1), ('YPF\ADMIN', 2), ('YPF\ADMIN', 3), ('YPF\ADMIN', 4)
+    ,('YPF\ADMIN', 5), ('YPF\ADMIN', 6), ('YPF\ADMIN', 7), ('YPF\ADMIN', 8)
+    ,('YPF\OPERADOR', 7), ('YPF\OPERADOR', 8)
+) v (IdRed, IdRol)
 INNER JOIN dbo.t_Usuario u ON u.IdRed_Usuario = v.IdRed
 INNER JOIN dbo.t_Rol r ON r.Id_Rol = v.IdRol
 WHERE NOT EXISTS (SELECT 1 FROM dbo.t_UsuarioRol x WHERE x.Id_Usuario = u.Id_Usuario AND x.Id_Rol = v.IdRol);

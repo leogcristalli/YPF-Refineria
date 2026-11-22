@@ -15,6 +15,11 @@
 	,CONSTRAINT [FK_Usuario_TipoDocumentoIdentidad] FOREIGN KEY([Id_TipoDocumento]) REFERENCES [t_TipoDocumentoIdentidad]([Id_TipoDocumentoIdentidad])
 )
 GO;
+
+-- El ID de red es el nombre de usuario del login: no puede repetirse (tampoco con un usuario dado de baja).
+CREATE UNIQUE NONCLUSTERED INDEX [UX_Usuario_IdRed]
+	ON [dbo].[t_Usuario] ([IdRed_Usuario]);
+GO
 --
 CREATE TRIGGER tg_usuario_u
 ON [dbo].[t_usuario]

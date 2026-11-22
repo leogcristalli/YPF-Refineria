@@ -1,14 +1,18 @@
 import React from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     Truck, Scale, LayoutDashboard, Users, Package,
-    Briefcase, UserCheck, Monitor, Bell, Search,
+    Briefcase, UserCheck, Monitor, Search,
     Settings, LogOut, ChevronRight, FileText, BarChart2, Database,
     Camera, MapPin, ListChecks, Shield
 } from 'lucide-react';
+import { useAuth } from '../auth/AuthContext';
+import { rutaPermitida } from '../auth/puntosMenu';
 
 const MainLayout = () => {
     const location = useLocation();
+    const navigate = useNavigate();
+    const { sesion, logout } = useAuth();
 
     const menuItems = [
         {
@@ -37,6 +41,20 @@ const MainLayout = () => {
         }
     ];
 
+    // Solo las pantallas permitidas por los roles del usuario (Inicio no lleva punto: la ven todos).
+    const menuVisible = menuItems
+        .map(group => ({ ...group, items: group.items.filter(item => rutaPermitida(item.path, sesion?.puntosMenu)) }))
+        .filter(group => group.items.length > 0);
+
+    const usuario = sesion?.usuario;
+    const iniciales = `${usuario?.nombre?.[0] ?? ''}${usuario?.apellido?.[0] ?? ''}`.toUpperCase();
+    const rolesTexto = (sesion?.roles ?? []).map(r => r.descripcion).join(', ');
+
+    const handleLogout = () => {
+        logout();
+        navigate('/login', { replace: true });
+    };
+
     return (
         <div className="flex h-screen bg-slate-50 font-sans text-slate-900 overflow-hidden">
             {/* Sidebar */}
@@ -52,7 +70,7 @@ const MainLayout = () => {
                 </div>
 
                 <nav className="flex-1 px-4 space-y-8 overflow-y-auto custom-scrollbar pt-2">
-                    {menuItems.map((group, idx) => (
+                    {menuVisible.map((group, idx) => (
                         <div key={idx}>
                             <p className="px-4 text-[11px] font-bold text-slate-500 uppercase tracking-[0.15em] mb-3">{group.group}</p>
                             <div className="space-y-1">
@@ -84,12 +102,12 @@ const MainLayout = () => {
 
                 <div className="p-6 mt-auto border-t border-white/5 bg-black/20">
                     <div className="flex items-center gap-3 mb-6">
-                        <div className="w-10 h-10 rounded-full bg-linear-to-tr from-blue-600 to-blue-400 flex items-center justify-center font-bold text-sm">MC</div>
-                        <div className="flex-1">
-                            <p className="text-xs font-bold leading-none">M. Cristalli</p>
-                            <p className="text-[10px] text-slate-500 mt-1">Administrador</p>
+                        <div className="w-10 h-10 shrink-0 rounded-full bg-linear-to-tr from-blue-600 to-blue-400 flex items-center justify-center font-bold text-sm">{iniciales}</div>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-xs font-bold leading-none truncate" title={usuario?.idRed}>{usuario?.nombre} {usuario?.apellido}</p>
+                            <p className="text-[10px] text-slate-500 mt-1 truncate" title={rolesTexto}>{rolesTexto}</p>
                         </div>
-                        <button className="text-slate-500 hover:text-red-400 transition-colors">
+                        <button onClick={handleLogout} title="Cerrar sesión" className="text-slate-500 hover:text-red-400 transition-colors">
                             <LogOut size={16} />
                         </button>
                     </div>
@@ -115,10 +133,6 @@ const MainLayout = () => {
                         </div>
                     </div>
                     <div className="flex items-center gap-6">
-                        <button className="relative text-slate-500 hover:text-blue-600 transition-colors">
-                            <Bell size={20} />
-                            <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] flex items-center justify-center rounded-full border-2 border-white font-bold">3</span>
-                        </button>
                         <button className="text-slate-500 hover:text-blue-600 transition-colors">
                             <Settings size={20} />
                         </button>
@@ -126,9 +140,6 @@ const MainLayout = () => {
                         <div className="flex items-center gap-3">
                             <div className="text-right">
                                 <p className="text-sm font-bold leading-none">Planta La Plata</p>
-                                <p className="text-[10px] text-slate-500 mt-1 font-semibold flex items-center justify-end gap-1">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span> BÁSCULA #01
-                                </p>
                             </div>
                         </div>
                     </div>

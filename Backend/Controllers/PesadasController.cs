@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Backend.Auth;
 using Backend.Data;
 using Backend.Hardware;
 using Backend.Models;
@@ -10,6 +11,7 @@ namespace Backend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Permiso(PuntoMenu.Pesadas)]
     public class PesadasController : ControllerBase
     {
         // Valores de los datos de sistema (t_TipoOrden, t_TipoPesada, t_EstadoOrdenTransporte).
@@ -35,7 +37,9 @@ namespace Backend.Controllers
 
         // GET: api/Pesadas
         // Incluye el nombre de la báscula (aunque esté dada de baja); null = ingreso manual sin báscula.
+        // Abierto a cualquier usuario logueado: lo usa el Panel de Control.
         [HttpGet]
+        [Permiso]
         public async Task<ActionResult<IEnumerable<object>>> GetPesadas()
         {
             var pesadas = await _context.Pesadas
@@ -264,7 +268,9 @@ namespace Backend.Controllers
             return await _context.Pesadas.Where(p => p.Id_Planificacion == idPlanificacion).ToListAsync();
         }
 
+        // También lo usa el detalle de una orden en Órdenes de Transporte y Planificación.
         [HttpGet("ByOrdenTransporte/{idOrdenTransporte}")]
+        [Permiso(PuntoMenu.Pesadas, PuntoMenu.OrdenesTransporte, PuntoMenu.AutorizacionesDescarga, PuntoMenu.OrdenesEntrega)]
         public async Task<ActionResult<IEnumerable<Pesada>>> GetPesadasByOrdenTransporte(long idOrdenTransporte)
         {
             // Join via Planificacion

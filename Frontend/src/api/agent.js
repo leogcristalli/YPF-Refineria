@@ -1,8 +1,32 @@
 import axios from 'axios';
+import { leerSesion, borrarSesion } from '../auth/sesion';
 
 const agent = axios.create({
     baseURL: 'http://localhost:5033/api',
 });
+
+const URL_LOGIN = '/Auth/login';
+
+// Cada request lleva el token de la sesión.
+agent.interceptors.request.use(config => {
+    const sesion = leerSesion();
+    if (sesion?.token) config.headers.Authorization = `Bearer ${sesion.token}`;
+    return config;
+});
+
+// 401 = sin sesión o token vencido: se borra la sesión y se vuelve al login.
+// El error se devuelve tal cual (sin cambiar su forma) para que getErrorMessage siga funcionando.
+// El 401 del propio login (credenciales inválidas) lo muestra la pantalla de login.
+agent.interceptors.response.use(
+    response => response,
+    error => {
+        if (error?.response?.status === 401 && error.config?.url !== URL_LOGIN) {
+            borrarSesion();
+            if (window.location.pathname !== '/login') window.location.assign('/login?vencida=1');
+        }
+        return Promise.reject(error);
+    }
+);
 
 const responseBody = (response) => response.data;
 
@@ -27,7 +51,18 @@ const Conductores = createCrud('/Conductores');
 const Productos = createCrud('/Productos');
 const RazonesSociales = createCrud('/RazonesSociales');
 const Basculas = createCrud('/Basculas');
-const Usuarios = createCrud('/Usuarios');
+const Usuarios = {
+    ...createCrud('/Usuarios'),
+    // Ids de los roles asignados / reemplazar la asignación completa.
+    roles: (id) => requests.get(`/Usuarios/${id}/roles`),
+    asignarRoles: (id, roles) => requests.put(`/Usuarios/${id}/roles`, { roles }),
+};
+const TiposDocumento = {
+    list: () => requests.get('/TiposDocumento'),
+};
+const Auth = {
+    login: (idRed, password) => requests.post(URL_LOGIN, { idRed, password }),
+};
 const Tanques = createCrud('/Tanques');
 const DispositivosDetectores = createCrud('/DispositivosDetectores');
 const Puestos = createCrud('/Puestos');
@@ -49,7 +84,6 @@ const Planificaciones = {
     // Solo las de OT abiertas con pesadas pendientes (las que se pueden pesar).
     pendientes: () => requests.get('/Planificaciones/pendientes'),
 };
-const Ordenes = createCrud('/Ordenes');
 
 const Pesadas = {
     list: () => requests.get('/Pesadas'),
@@ -82,12 +116,14 @@ const Reportes = {
 };
 
 export default {
+    Auth,
     Vehiculos,
     Conductores,
     Productos,
     RazonesSociales,
     Basculas,
     Usuarios,
+    TiposDocumento,
     Tanques,
     DispositivosDetectores,
     Puestos,
@@ -96,7 +132,6 @@ export default {
     Hardware,
     OrdenesTransporte,
     Planificaciones,
-    Ordenes,
     Pesadas,
     Reportes,
 };
