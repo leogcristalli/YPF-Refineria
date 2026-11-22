@@ -66,20 +66,3 @@ El sistema no solo registra la operación: transforma los datos de pesaje en inf
 *   **Para quién:** Gerente de Puesto de Básculas y responsables de mantenimiento.
 *   **Qué muestra:** cantidad y porcentaje de pesadas por báscula, incluidas las de ingreso manual sin báscula.
 *   **Decisiones que apoya:** balancear la carga entre básculas, programar el mantenimiento y la renovación de certificados en la de menor uso o en horarios de baja demanda, y detectar una báscula con muchos ingresos manuales, señal de fallas de comunicación.
-
----
-
-## 3. Herramientas de Gestión del Proyecto
-
-La elección de estas herramientas busca maximizar la transparencia, la trazabilidad del trabajo y una comunicación fluida entre los desarrolladores y los interesados (stakeholders).
-
-### Gestión del Código: Git y GitHub
-*   **Justificación:** permite un control de versiones distribuido. Es fundamental para trabajar en equipo sin sobrescribir el trabajo de otros, mantener un historial completo de cambios (quién modificó qué y cuándo) y facilitar la incorporación de nuevas funcionalidades mediante *Pull Requests* para revisión de código. Los *issues* registran los problemas detectados y los trabajos pendientes, y cada *Pull Request* los cierra al incorporarse.
-
-### Gestión de Proyectos: Trello / Jira
-*   **Justificación:** se utiliza una metodología ágil (Kanban/Scrum). Estas herramientas permiten visualizar el estado real del proyecto (Pendiente > En progreso > Testeo > Terminado).
-    *   *Ejemplo:* una tarjeta para "Crear ABM de Conductores" se mueve a "Terminado" solo cuando cumple con los criterios de aceptación, lo que facilita decidir cuándo liberar una nueva versión.
-
-### Enfoque de Desarrollo: Desarrollo Funcional Directo
-*   **Justificación:** se optó por prescindir de herramientas de diseño estático (como Figma) para pasar directamente al **desarrollo del sistema funcional**.
-*   **Beneficio:** esta estrategia "Code-First" permite validar la lógica de negocio y la experiencia de usuario sobre el software real desde el primer momento, reduciendo los tiempos de entrega y evitando la discrepancia entre el diseño estático y la implementación final.

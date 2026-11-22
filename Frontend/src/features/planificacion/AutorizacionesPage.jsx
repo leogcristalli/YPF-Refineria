@@ -16,7 +16,7 @@ import {
 const AutorizacionesPage = () => {
     const [ordenes, setOrdenes] = useState([]);
     const [loading, setLoading] = useState(true);
-    // Cada pestaña tiene su punto de menú (Entrega 3: Recepción opera descargas; Despacho, entregas).
+    // Cada pestaña tiene su punto de menú (según la especificación: Recepción opera descargas; Despacho, entregas).
     const { tienePunto } = useAuth();
     const verDescargas = tienePunto(PUNTOS.AUTORIZACIONES_DESCARGA);
     const verEntregas = tienePunto(PUNTOS.ORDENES_ENTREGA);

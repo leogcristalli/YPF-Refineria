@@ -1,6 +1,6 @@
 # Especificación Funcional: Sistema Inteligente de Gestión y Automatización de Pesajes (CILP)
 
-Este documento contiene la lógica detallada de los Casos de Uso (CUs) para el sistema de pesaje de la Refinería de La Plata. Está diseñado para ser procesado por LLMs en el desarrollo de la arquitectura y lógica del proyecto.
+Este documento contiene la lógica detallada de los Casos de Uso (CUs) para el sistema de pesaje de camiones de una refinería.
 
 ## 1. Resumen de Casos de Uso (Módulos)
 
@@ -67,12 +67,12 @@ El sistema se compone de 78 Casos de Uso (CU01 a CU24 y CU030 a CU083) organizad
 
 Pila tecnológica definida para el proyecto:
 
-* **Arquitectura:** aplicación web de tres capas. El backend es un único proyecto ASP.NET Core con carpetas de controladores, modelos y acceso a datos (Entity Framework Core). La especificación original proponía Clean Architecture; este desvío está documentado en el documento de Entrega 3.
+* **Arquitectura:** aplicación web de tres capas. El backend es un único proyecto ASP.NET Core con carpetas de controladores, modelos y acceso a datos (Entity Framework Core). La especificación original proponía Clean Architecture; se optó por una estructura más simple, acorde al tamaño del proyecto.
 * **Backend:** .NET (WebAPI).
 * **Frontend:** React JS (Single Page Application).
 * **Base de Datos:** SQL Server.
 * **Integración de Hardware:** módulo "Device Connector" en .NET detrás de la interfaz `IDeviceConnector`. La implementación incluida es un **simulador** (`Hardware:Modo = "Simulado"`) de básculas y cámaras OCR; un conector real solo debe implementar la misma interfaz.
-* **Seguridad:** Autenticación con Doble Factor (2FA) y control de acceso basado en roles (RBAC).
+* **Seguridad:** inicio de sesión con JWT y control de acceso basado en roles (RBAC). La autenticación con doble factor (2FA) quedó fuera del alcance de esta versión.
 
 ---
 

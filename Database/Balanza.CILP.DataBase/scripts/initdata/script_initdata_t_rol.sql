@@ -1,6 +1,6 @@
 ﻿PRINT N'initdata dbo.t_rol'
 GO
--- Roles base de la especificación (Entrega 3). Solo inserta los que faltan (por id): el nombre,
+-- Roles base de la especificación. Solo inserta los que faltan (por id): el nombre,
 -- la baja y los roles nuevos se administran desde la pantalla Roles y Permisos (CU05 a CU09)
 -- y una nueva publicación no los pisa.
 SET IDENTITY_INSERT dbo.t_rol ON;
