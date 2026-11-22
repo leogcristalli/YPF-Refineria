@@ -83,6 +83,30 @@ Usuarios de demostración (contraseña de ambos: `Demo1234!`):
 
 > La aplicación **todavía no pide inicio de sesión**: estos usuarios existen en la base para cuando se implemente. Son solo para demostración; en un entorno real deben eliminarse o cambiarse sus contraseñas.
 
+#### Volver a dejar la demo como nueva
+
+Después de probar (pesar, crear, cancelar órdenes) las OT pendientes se van consumiendo. El script `reset_demo.sql` las repone. Tampoco se ejecuta al publicar. Se corre **desde la raíz del repositorio** (incluye `seed_demo.sql` con una ruta relativa a esa carpeta):
+
+```
+sqlcmd -S .\SQLEXPRESS -E -d BalanzaCILP -f 65001 -b -i Database\Balanza.CILP.DataBase\scripts\testdata\reset_demo.sql
+```
+
+Con LocalDB, cambien el servidor por `"(localdb)\MSSQLLocalDB"`, igual que en el seed. Al terminar bien imprime `reset_demo OK`.
+
+Qué hace:
+
+- Borra **todas** las órdenes de transporte con sus pesadas y planificaciones, salvo las 5 OT ya ejecutadas que carga el seed (el historial que usan los reportes). Esto incluye cualquier orden creada desde la aplicación.
+- Devuelve a los tanques el volumen que reservaban las autorizaciones de descarga borradas.
+- Vuelve a correr `seed_demo.sql`, que deja tres camiones con OT pendientes y fechas de hoy:
+
+| Patente | Orden | Pesadas |
+|---|---|---|
+| `AF789HJ` | Autorización de descarga (crudo) | BRUTO hecha, falta la TARA |
+| `AD345MN` | Orden de entrega (gasoil) | Ninguna |
+| `AE123BC` | Orden de entrega (nafta) | Ninguna |
+
+No toca los maestros (vehículos, conductores, básculas, tanques, usuarios, etc.) y se puede correr las veces que haga falta.
+
 ### 3. Configurar y ejecutar el backend
 
 La cadena de conexión **no está en el repositorio**. Se configura con *user-secrets* de .NET. Desde la carpeta `Backend/`:

@@ -41,3 +41,42 @@
 .animate-pulse-soft {
   animation: pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
+
+/* Impresión del ticket de pesada (CU079). El modal se monta en un portal directo en <body>
+   (.ticket-print-root): al imprimir se oculta el resto de la aplicación y se imprime solo
+   el área del ticket, sin overlay, sin encabezado del modal y sin botones. */
+@media print {
+  body > :not(.ticket-print-root) {
+    display: none !important;
+  }
+
+  body {
+    background: white !important;
+  }
+
+  .ticket-print-root {
+    position: static !important;
+    display: block !important;
+    padding: 0 !important;
+    background: none !important;
+    backdrop-filter: none !important;
+  }
+
+  .ticket-print-card {
+    max-width: none !important;
+    max-height: none !important;
+    overflow: visible !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    animation: none !important;
+  }
+
+  .ticket-no-print {
+    display: none !important;
+  }
+
+  #ticket-print-area {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

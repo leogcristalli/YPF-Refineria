@@ -44,7 +44,11 @@ const OrdenesTransporte = {
     cancelar: (id, motivo) => requests.patch(`/OrdenesTransporte/${id}/cancelar`, { motivo }),
     byPatente: (patente) => requests.get(`/OrdenesTransporte/ByPatente/${patente}`),
 };
-const Planificaciones = createCrud('/Planificaciones');
+const Planificaciones = {
+    ...createCrud('/Planificaciones'),
+    // Solo las de OT abiertas con pesadas pendientes (las que se pueden pesar).
+    pendientes: () => requests.get('/Planificaciones/pendientes'),
+};
 const Ordenes = createCrud('/Ordenes');
 
 const Pesadas = {
