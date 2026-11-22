@@ -1,31 +1,24 @@
 ﻿PRINT N'initdata dbo.t_rol'
 GO
-;SET IDENTITY_INSERT dbo.t_rol ON
-GO
-;MERGE dbo.t_rol t
-USING
-(
-	SELECT	*
-	FROM
-			(
-				VALUES
-				 (1, N'Administrador de Sistema', 1)
-				,(2, N'Administrador de Negocio', 1)
-				,(3, N'Administrador de Recepción', 1)
-				,(4, N'Planificador de Descarga', 1)
-				,(5, N'Administrador de Despacho', 1)
-				,(6, N'Planificador de Carga', 1)
-				,(7, N'Conductor Transporte', 1)
-				,(8, N'Gerente de Puesto de Básculas', 1)
-			) i (id_rol, descripcion_rol, activo_rol)
-			
-) ii ON t.id_rol = ii.id_rol
-WHEN MATCHED THEN
-	UPDATE
-	SET  t.descripcion_rol = ii.descripcion_rol
-		,t.activo_rol = ii.activo_rol
-WHEN NOT MATCHED BY TARGET THEN
-	INSERT (id_rol, descripcion_rol, activo_rol)
-	VALUES (ii.id_rol, ii.descripcion_rol, ii.activo_rol)
-;SET IDENTITY_INSERT dbo.t_rol OFF
+-- Roles base de la especificación (Entrega 3). Solo inserta los que faltan (por id): el nombre,
+-- la baja y los roles nuevos se administran desde la pantalla Roles y Permisos (CU05 a CU09)
+-- y una nueva publicación no los pisa.
+SET IDENTITY_INSERT dbo.t_rol ON;
+
+INSERT INTO dbo.t_rol (id_rol, descripcion_rol, activo_rol)
+SELECT v.Id, v.Descripcion, 1
+FROM (
+	VALUES
+	 (1, N'Administrador de Sistema')
+	,(2, N'Administrador de Negocio')
+	,(3, N'Administrador de Recepción')
+	,(4, N'Planificador de Descarga')
+	,(5, N'Administrador de Despacho')
+	,(6, N'Planificador de Carga')
+	,(7, N'Conductor Transporte')
+	,(8, N'Gerente de Puesto de Básculas')
+) v (Id, Descripcion)
+WHERE NOT EXISTS (SELECT 1 FROM dbo.t_rol r WHERE r.id_rol = v.Id);
+
+SET IDENTITY_INSERT dbo.t_rol OFF;
 GO
