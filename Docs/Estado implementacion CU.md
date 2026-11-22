@@ -1,4 +1,4 @@
-# Estado de Implementación de los Casos de Uso
+﻿# Estado de Implementación de los Casos de Uso
 
 Este documento compara los casos de uso especificados (según el documento de Entrega 3 y `CUs.md`) con lo que está implementado en el sistema.
 
@@ -10,7 +10,7 @@ Este documento compara los casos de uso especificados (según el documento de En
 | Parcial | El caso de uso tiene pantalla y backend, pero falta parte de su lógica; el detalle indica qué. |
 | Pendiente | No está disponible en la aplicación. |
 
-**Fecha de corte:** 21/11/2026, después de la revisión de los PR #12, #14 y #15 (issue #17) y del inicio de sesión con roles (issue #19). Actualizar la tabla antes de la entrega final.
+**Fecha de corte:** 21/11/2026, después de la revisión de los PR #12, #14 y #15 (issue #17) y del inicio de sesión con roles (issue #19) y de la planificación logística (issue #21). Actualizar la tabla antes de la entrega final.
 
 ## 1. Resumen
 
@@ -18,11 +18,11 @@ El documento de Entrega 3 define **78 casos de uso** (CU01 a CU24 y CU030 a CU08
 
 | Estado | Casos de uso | Cantidad |
 |---|---|---|
-| Implementado | CU01-CU24, CU030-CU059, CU077-CU079, CU081-CU083 | 60 |
-| Parcial | CU060-CU076, CU080 | 18 |
+| Implementado | CU01-CU24, CU030-CU083 | 78 |
+| Parcial | — | 0 |
 | Pendiente | — | 0 |
 
-Todos los casos de uso tienen pantalla y backend. Los parciales tienen huecos de lógica que se detallan abajo, casi todos en la planificación logística (CU060-CU076).
+Todos los casos de uso cumplen sus reglas principales. Las limitaciones conocidas se indican en cada uno (volumen de tanques, una orden de entrega con un solo detalle) y en la sección 3 (2FA fuera de alcance).
 
 > El conteo por estado debe recalcularse cuando cambie la tabla de la sección 2.
 
@@ -46,13 +46,15 @@ Todos los casos de uso tienen pantalla y backend. Los parciales tienen huecos de
 
 ### Módulo de Gestión (Planificación Logística)
 
-Autorización de Descarga, Orden de Entrega y Orden de Transporte usan el mismo endpoint (`OrdenesTransporteController`) y el mismo formulario, diferenciados por el tipo de orden. Cada alta crea siempre una orden con un detalle, una orden de transporte y una planificación (1 : 1 : 1 : 1).
+Autorización de Descarga, Orden de Entrega y Orden de Transporte usan el mismo endpoint (`OrdenesTransporteController`) y el mismo formulario (`OrdenModales.jsx`), diferenciados por el tipo de orden. Cada alta crea una orden con un detalle, una orden de transporte y una planificación (1 : 1 : 1 : 1).
+
+**Ciclo de estados** (valores de `t_EstadoOrden` y `t_EstadoOrdenTransporte`): al darse de alta, la orden y la OT quedan **Planificado**; replanificar pasa la OT a **Replanificado**; la primera pesada, a **Ejecución**; la segunda cierra la orden en **Definitivo** (con fecha de cierre) y la OT en **Ejecutado**. Cancelar pasa la orden a **Anulado** con fecha y motivo. Borrador y Eliminado no se usan.
 
 | CU | Nombre | Estado | Observaciones |
 |---|---|---|---|
-| CU060-CU065 | Autorización de Descarga: consultar, crear, ver, modificar, cancelar, eliminar | Parcial | Tab de descargas en `AutorizacionesPage`, con tanque de destino y validación de capacidad (CU061, convirtiendo kg a litros con la densidad), cancelación con motivo que libera el volumen reservado y eliminación en cascada. **Falta:** elegir el centro de recepción (CU061 lo pide; hoy se asigna el primer puesto activo); el estado de la orden queda siempre en Borrador (cancelar no la pasa a Anulado); modificar no recalcula la reserva del tanque ni vuelve a validar su capacidad. |
-| CU066-CU071 | Orden de Entrega: consultar, crear, ver, modificar, cancelar, eliminar | Parcial | Tab de despachos en `AutorizacionesPage` con alta, detalle, modificación, cancelación y eliminación. **Falta:** una orden de entrega con varios detalles u órdenes de transporte; elegir el puesto de expedición; estados de la orden (igual que CU060-CU065). |
-| CU072-CU076 | Orden de Transporte | Parcial | Alta, consulta, detalle, modificación y baja (`OrdenesTransportePage`). La baja de una OT con pesadas devuelve 409 con mensaje claro. **Falta:** la modificación no valida el estado (permite editar una OT ejecutada o cancelada) ni los datos de entrada; no hay replanificación (el estado Replanificado y el motivo de replanificación nunca se cargan). |
+| CU060-CU065 | Autorización de Descarga: consultar, crear, ver, modificar, cancelar, eliminar | Implementado | Pestaña de descargas en Planificación Logística. El alta exige centro de recepción, material, cantidad y tanque de destino, y valida la capacidad del tanque (kg a litros con la densidad del producto), que queda reservada (CU061). Modificar solo se permite en órdenes abiertas sin pesadas, con las mismas validaciones que el alta; recalcula la reserva del tanque (también si se cambia de tanque) y vuelve a validar la capacidad. Cancelar exige motivo, deja la orden Anulada y libera la reserva. Eliminar es baja física (409 si tiene pesadas). |
+| CU066-CU071 | Orden de Entrega: consultar, crear, ver, modificar, cancelar, eliminar | Implementado | Pestaña de entregas, con las mismas reglas; el alta exige el puesto de expedición y el tanque de origen es opcional (no reserva volumen). **Limitación:** una orden de entrega tiene un solo detalle y una sola orden de transporte. |
+| CU072-CU076 | Orden de Transporte | Implementado | Pantalla Órdenes de Transporte: consulta con tipo, fecha y estado; alta con selector de tipo de orden (mismo formulario que Planificación); detalle con sus pesadas; modificación; baja. **Replanificar** (CU075) cambia la fecha planificada con motivo obligatorio (fecha no anterior a hoy y distinta de la actual) en órdenes abiertas sin pesadas; registra fecha y motivo de la replanificación. La fecha solo se cambia con Replanificar. |
 
 ### Módulo de Operaciones
 
@@ -66,7 +68,7 @@ Autorización de Descarga, Orden de Entrega y Orden de Transporte usan el mismo 
 
 | CU | Nombre | Estado | Observaciones |
 |---|---|---|---|
-| CU080 | Reporte de Movimientos por Periodos | Parcial | Solo órdenes en estado Ejecutado (RN01), Desde menor o igual a Hasta (RN02), filtros por fecha de fin de ejecución y tipo de movimiento, tarjetas de totales y tabla. **Falta:** el filtro Replanificado "Sí" siempre devuelve vacío porque el sistema no registra replanificaciones (ver CU072-CU076). |
+| CU080 | Reporte de Movimientos por Periodos | Implementado | Solo órdenes en estado Ejecutado (RN01), Desde menor o igual a Hasta (RN02), filtros por fecha de fin de ejecución, tipo de movimiento y Replanificado (órdenes replanificadas con CU075), tarjetas de totales y tabla. |
 | CU081 | Reporte de Movimientos por Productos | Implementado | Agrupación por producto con cantidad de OT, total planificado contra neto y promedio por orden. |
 | CU082 | Reporte de Duración Promedio de Orden de Transporte | Implementado | Tiempo entre la primera y la última pesada de cada OT, con distribución por rangos y detalle por orden. |
 | CU083 | Reporte de Frecuencia de Ocupación por Báscula | Implementado | Cantidad y porcentaje de pesadas por báscula (incluye los ingresos manuales sin báscula). Mide frecuencia de uso, no tiempo de ocupación. |
