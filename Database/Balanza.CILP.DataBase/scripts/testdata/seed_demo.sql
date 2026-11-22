@@ -189,7 +189,10 @@ INSERT INTO @OT VALUES
 ,(2026004, @OrdenEntrega,         @OTEjecutado,   N'Fuel Oil',                '30-71000002-2', '30-71000005-7', 'AD345MN', '26123789', 28000, -2, N'Puesto Salida Sur',   NULL)
 ,(2026005, @OrdenEntrega,         @OTEjecutado,   N'Nafta Súper',             '30-71000003-0', '30-71000004-9', 'AE123BC', '28456123', 32000, -1, N'Puesto Salida Sur',   'TK-B1')
 ,(2026006, @AutorizacionDescarga, @OTEjecucion,   N'Petróleo Crudo Medanito', '30-71000001-4', '30-71000004-9', 'AF789HJ', '31789456', 30000,  0, N'Puesto Acceso Norte', 'TK-101')
-,(2026007, @OrdenEntrega,         @OTPlanificado, N'Gasoil Grado 3',          '30-71000002-2', '30-71000005-7', 'AD345MN', '26123789', 30000,  1, N'Puesto Salida Sur',   NULL);
+,(2026007, @OrdenEntrega,         @OTPlanificado, N'Gasoil Grado 3',          '30-71000002-2', '30-71000005-7', 'AD345MN', '26123789', 30000,  1, N'Puesto Salida Sur',   NULL)
+,(2026008, @OrdenEntrega,         @OTPlanificado, N'Nafta Súper',             '30-71000003-0', '30-71000004-9', 'AE123BC', '28456123', 30000,  1, N'Puesto Salida Sur',   NULL);
+-- Las OT pendientes (2026006 a 2026008) las repone reset_demo.sql: si se agrega o se quita
+-- una OT acá, actualizar también la lista @RemitosSeed de ese script.
 
 DECLARE @Pes TABLE (Remito BIGINT, TipoPesada TINYINT, Dia INT, Minuto INT, Kg DECIMAL(10,2), SerieBascula VARCHAR(20) NULL, Motivo VARCHAR(300) NULL);
 INSERT INTO @Pes VALUES
