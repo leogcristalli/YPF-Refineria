@@ -3,6 +3,7 @@ import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Scale, LogIn, Loader2, AlertCircle } from 'lucide-react';
 import { getErrorMessage } from '../api/agent';
 import { useAuth } from './AuthContext';
+import { rutaPermitida } from './puntosMenu';
 
 const LoginPage = () => {
     const { sesion, login } = useAuth();
@@ -15,17 +16,19 @@ const LoginPage = () => {
 
     // Llegó acá por un 401 (sesión vencida) desde el interceptor de agent.js.
     const vencida = new URLSearchParams(location.search).get('vencida') === '1';
-    const destino = location.state?.desde || '/';
+    // Última pantalla pedida antes del login; si los roles del usuario no la permiten, Inicio.
+    const desde = location.state?.desde || '/';
+    const destinoPara = (s) => (rutaPermitida(desde, s?.puntosMenu) ? desde : '/');
 
-    if (sesion) return <Navigate to={destino} replace />;
+    if (sesion) return <Navigate to={destinoPara(sesion)} replace />;
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
         setLoading(true);
         try {
-            await login(idRed.trim(), password);
-            navigate(destino, { replace: true });
+            const nueva = await login(idRed.trim(), password);
+            navigate(destinoPara(nueva), { replace: true });
         } catch (err) {
             setError(getErrorMessage(err, 'No se pudo iniciar sesión. Verifique que el servidor esté disponible.'));
         } finally {

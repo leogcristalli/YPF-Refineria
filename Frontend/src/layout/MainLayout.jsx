@@ -2,48 +2,48 @@ import React from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     Truck, Scale, LayoutDashboard, Users, Package,
-    Briefcase, UserCheck, Monitor, Bell, Search,
+    Briefcase, UserCheck, Monitor, Search,
     Settings, LogOut, ChevronRight, FileText, BarChart2, Database,
     Camera, MapPin, ListChecks, Shield
 } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
-import { PUNTOS } from '../auth/puntosMenu';
+import { rutaPermitida } from '../auth/puntosMenu';
 
 const MainLayout = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const { sesion, logout, tienePunto } = useAuth();
+    const { sesion, logout } = useAuth();
 
     const menuItems = [
         {
             group: "Operaciones", items: [
                 { path: "/", label: "Inicio", icon: <LayoutDashboard size={20} /> },
-                { path: "/pesadas", puntos: [PUNTOS.PESADAS], label: "Gestión de Pesadas", icon: <Scale size={20} /> },
-                { path: "/ordenes-transporte", puntos: [PUNTOS.ORDENES_TRANSPORTE], label: "Órdenes de Transporte", icon: <Truck size={20} /> },
-                { path: "/planificacion", puntos: [PUNTOS.AUTORIZACIONES_DESCARGA, PUNTOS.ORDENES_ENTREGA], label: "Planificación Logística", icon: <FileText size={20} /> },
-                { path: "/reportes", puntos: [PUNTOS.REPORTES], label: "Reportes & Métricas", icon: <BarChart2 size={20} /> },
+                { path: "/pesadas", label: "Gestión de Pesadas", icon: <Scale size={20} /> },
+                { path: "/ordenes-transporte", label: "Órdenes de Transporte", icon: <Truck size={20} /> },
+                { path: "/planificacion", label: "Planificación Logística", icon: <FileText size={20} /> },
+                { path: "/reportes", label: "Reportes & Métricas", icon: <BarChart2 size={20} /> },
             ]
         },
         {
             group: "Administración", items: [
-                { path: "/vehiculos", puntos: [PUNTOS.VEHICULOS], label: "Vehículos", icon: <Truck size={20} /> },
-                { path: "/conductores", puntos: [PUNTOS.CONDUCTORES], label: "Conductores", icon: <Users size={20} /> },
-                { path: "/productos", puntos: [PUNTOS.PRODUCTOS], label: "Productos", icon: <Package size={20} /> },
-                { path: "/razones-sociales", puntos: [PUNTOS.RAZONES_SOCIALES], label: "Razones Sociales", icon: <Briefcase size={20} /> },
-                { path: "/basculas", puntos: [PUNTOS.BASCULAS], label: "Básculas", icon: <Monitor size={20} /> },
-                { path: "/tanques", puntos: [PUNTOS.TANQUES], label: "Tanques", icon: <Database size={20} /> },
-                { path: "/puestos", puntos: [PUNTOS.PUESTOS], label: "Puestos de Expedición", icon: <MapPin size={20} /> },
-                { path: "/dispositivos", puntos: [PUNTOS.DISPOSITIVOS], label: "Dispositivos de Detección", icon: <Camera size={20} /> },
-                { path: "/puntos-menu", puntos: [PUNTOS.PUNTOS_MENU], label: "Puntos de Menú", icon: <ListChecks size={20} /> },
-                { path: "/roles", puntos: [PUNTOS.ROLES], label: "Roles y Permisos", icon: <Shield size={20} /> },
-                { path: "/usuarios", puntos: [PUNTOS.USUARIOS], label: "Usuarios", icon: <UserCheck size={20} /> },
+                { path: "/vehiculos", label: "Vehículos", icon: <Truck size={20} /> },
+                { path: "/conductores", label: "Conductores", icon: <Users size={20} /> },
+                { path: "/productos", label: "Productos", icon: <Package size={20} /> },
+                { path: "/razones-sociales", label: "Razones Sociales", icon: <Briefcase size={20} /> },
+                { path: "/basculas", label: "Básculas", icon: <Monitor size={20} /> },
+                { path: "/tanques", label: "Tanques", icon: <Database size={20} /> },
+                { path: "/puestos", label: "Puestos de Expedición", icon: <MapPin size={20} /> },
+                { path: "/dispositivos", label: "Dispositivos de Detección", icon: <Camera size={20} /> },
+                { path: "/puntos-menu", label: "Puntos de Menú", icon: <ListChecks size={20} /> },
+                { path: "/roles", label: "Roles y Permisos", icon: <Shield size={20} /> },
+                { path: "/usuarios", label: "Usuarios", icon: <UserCheck size={20} /> },
             ]
         }
     ];
 
     // Solo las pantallas permitidas por los roles del usuario (Inicio no lleva punto: la ven todos).
     const menuVisible = menuItems
-        .map(group => ({ ...group, items: group.items.filter(item => !item.puntos || tienePunto(...item.puntos)) }))
+        .map(group => ({ ...group, items: group.items.filter(item => rutaPermitida(item.path, sesion?.puntosMenu)) }))
         .filter(group => group.items.length > 0);
 
     const usuario = sesion?.usuario;
@@ -133,10 +133,6 @@ const MainLayout = () => {
                         </div>
                     </div>
                     <div className="flex items-center gap-6">
-                        <button className="relative text-slate-500 hover:text-blue-600 transition-colors">
-                            <Bell size={20} />
-                            <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] flex items-center justify-center rounded-full border-2 border-white font-bold">3</span>
-                        </button>
                         <button className="text-slate-500 hover:text-blue-600 transition-colors">
                             <Settings size={20} />
                         </button>
@@ -144,9 +140,6 @@ const MainLayout = () => {
                         <div className="flex items-center gap-3">
                             <div className="text-right">
                                 <p className="text-sm font-bold leading-none">Planta La Plata</p>
-                                <p className="text-[10px] text-slate-500 mt-1 font-semibold flex items-center justify-end gap-1">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span> BÁSCULA #01
-                                </p>
                             </div>
                         </div>
                     </div>

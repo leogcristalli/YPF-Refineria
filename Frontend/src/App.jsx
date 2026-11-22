@@ -3,7 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import MainLayout from './layout/MainLayout';
 import LoginPage from './auth/LoginPage';
 import { RequireAuth, Permitido } from './auth/AuthContext';
-import { PUNTOS } from './auth/puntosMenu';
+import { PUNTOS_POR_RUTA } from './auth/puntosMenu';
 import Dashboard from './features/dashboard/Dashboard';
 import PesadasPage from './features/pesadas/PesadasPage';
 import OrdenesTransportePage from './features/masters/OrdenesTransportePage';
@@ -21,9 +21,9 @@ import RolesPage from './features/masters/RolesPage';
 import AutorizacionesPage from './features/planificacion/AutorizacionesPage';
 import ReportesPage from './features/reportes/ReportesPage';
 
-// Ruta de una pantalla con los puntos de menú que la habilitan.
-const pantalla = (path, puntos, element) => (
-  <Route path={path} element={<Permitido puntos={puntos}>{element}</Permitido>} />
+// Ruta de una pantalla protegida por los puntos de menú de PUNTOS_POR_RUTA.
+const pantalla = (path, element) => (
+  <Route path={path} element={<Permitido puntos={PUNTOS_POR_RUTA[`/${path}`]}>{element}</Permitido>} />
 );
 
 function App() {
@@ -36,23 +36,23 @@ function App() {
         <Route index element={<Dashboard />} />
 
         {/* Operaciones */}
-        {pantalla('pesadas', [PUNTOS.PESADAS], <PesadasPage />)}
-        {pantalla('ordenes-transporte', [PUNTOS.ORDENES_TRANSPORTE], <OrdenesTransportePage />)}
-        {pantalla('planificacion', [PUNTOS.AUTORIZACIONES_DESCARGA, PUNTOS.ORDENES_ENTREGA], <AutorizacionesPage />)}
-        {pantalla('reportes', [PUNTOS.REPORTES], <ReportesPage />)}
+        {pantalla('pesadas', <PesadasPage />)}
+        {pantalla('ordenes-transporte', <OrdenesTransportePage />)}
+        {pantalla('planificacion', <AutorizacionesPage />)}
+        {pantalla('reportes', <ReportesPage />)}
 
         {/* Maestros */}
-        {pantalla('vehiculos', [PUNTOS.VEHICULOS], <VehiculosPage />)}
-        {pantalla('conductores', [PUNTOS.CONDUCTORES], <ConductoresPage />)}
-        {pantalla('productos', [PUNTOS.PRODUCTOS], <ProductosPage />)}
-        {pantalla('razones-sociales', [PUNTOS.RAZONES_SOCIALES], <RazonesSocialesPage />)}
-        {pantalla('basculas', [PUNTOS.BASCULAS], <BasculasPage />)}
-        {pantalla('tanques', [PUNTOS.TANQUES], <TanquesPage />)}
-        {pantalla('puestos', [PUNTOS.PUESTOS], <PuestosPage />)}
-        {pantalla('dispositivos', [PUNTOS.DISPOSITIVOS], <DispositivosPage />)}
-        {pantalla('puntos-menu', [PUNTOS.PUNTOS_MENU], <PuntosMenuPage />)}
-        {pantalla('roles', [PUNTOS.ROLES], <RolesPage />)}
-        {pantalla('usuarios', [PUNTOS.USUARIOS], <UsuariosPage />)}
+        {pantalla('vehiculos', <VehiculosPage />)}
+        {pantalla('conductores', <ConductoresPage />)}
+        {pantalla('productos', <ProductosPage />)}
+        {pantalla('razones-sociales', <RazonesSocialesPage />)}
+        {pantalla('basculas', <BasculasPage />)}
+        {pantalla('tanques', <TanquesPage />)}
+        {pantalla('puestos', <PuestosPage />)}
+        {pantalla('dispositivos', <DispositivosPage />)}
+        {pantalla('puntos-menu', <PuntosMenuPage />)}
+        {pantalla('roles', <RolesPage />)}
+        {pantalla('usuarios', <UsuariosPage />)}
       </Route>
     </Routes>
   );

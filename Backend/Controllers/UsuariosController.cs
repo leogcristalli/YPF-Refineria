@@ -108,8 +108,8 @@ namespace Backend.Controllers
                     ? $"Ya existe un usuario con el ID de red {datos.IdRed}."
                     : $"El ID de red {datos.IdRed} pertenece a un usuario dado de baja y no puede reutilizarse.";
 
-            if (!await _context.TiposDocumentoIdentidad.AnyAsync(t => t.Id_TipoDocumentoIdentidad == datos.Id_TipoDocumento))
-                return "El tipo de documento no existe.";
+            if (!await _context.TiposDocumentoIdentidad.AnyAsync(t => t.Id_TipoDocumentoIdentidad == datos.Id_TipoDocumento && t.Activo))
+                return "El tipo de documento no existe o no está activo.";
 
             return null;
         }

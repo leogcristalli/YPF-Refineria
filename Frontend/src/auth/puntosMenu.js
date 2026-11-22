@@ -18,3 +18,29 @@ export const PUNTOS = {
     ROLES: 15,
     USUARIOS: 16,
 };
+
+// Puntos de menú que habilitan cada pantalla (alcanza con uno). La usan las rutas (App.jsx),
+// el menú lateral (MainLayout.jsx) y el login. Inicio ('/') no lleva punto: la ven todos.
+export const PUNTOS_POR_RUTA = {
+    '/pesadas': [PUNTOS.PESADAS],
+    '/ordenes-transporte': [PUNTOS.ORDENES_TRANSPORTE],
+    '/planificacion': [PUNTOS.AUTORIZACIONES_DESCARGA, PUNTOS.ORDENES_ENTREGA],
+    '/reportes': [PUNTOS.REPORTES],
+    '/vehiculos': [PUNTOS.VEHICULOS],
+    '/conductores': [PUNTOS.CONDUCTORES],
+    '/productos': [PUNTOS.PRODUCTOS],
+    '/razones-sociales': [PUNTOS.RAZONES_SOCIALES],
+    '/basculas': [PUNTOS.BASCULAS],
+    '/tanques': [PUNTOS.TANQUES],
+    '/puestos': [PUNTOS.PUESTOS],
+    '/dispositivos': [PUNTOS.DISPOSITIVOS],
+    '/puntos-menu': [PUNTOS.PUNTOS_MENU],
+    '/roles': [PUNTOS.ROLES],
+    '/usuarios': [PUNTOS.USUARIOS],
+};
+
+// La ruta no exige punto o el usuario tiene alguno de los que exige.
+export const rutaPermitida = (ruta, puntosUsuario = []) => {
+    const requeridos = PUNTOS_POR_RUTA[ruta];
+    return !requeridos || requeridos.some(p => puntosUsuario.includes(p));
+};
