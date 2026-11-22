@@ -12,7 +12,7 @@ const Toast = ({ message, type, onDone }) => {
     useEffect(() => { const t = setTimeout(onDone, 3500); return () => clearTimeout(t); }, []);
     const colors = type === 'success' ? 'bg-emerald-600' : 'bg-blue-600';
     return (
-        <div className={`fixed top-6 right-6 z-[100] flex items-center gap-3 ${colors} text-white px-5 py-3.5 rounded-2xl shadow-2xl font-bold text-sm animate-in slide-in-from-top-4 duration-300`}>
+        <div className={`fixed bottom-6 right-6 z-[100] flex items-center gap-3 ${colors} text-white px-5 py-3.5 rounded-2xl shadow-2xl font-bold text-sm animate-in slide-in-from-bottom-4 duration-300`}>
             {message}
         </div>
     );
@@ -769,10 +769,11 @@ const PesadasPage = () => {
                                                 )}
                                             </td>
                                             <td className="px-6 py-4">
+                                                {/* Igual que el ticket: nombre de la báscula o "Ingreso manual" si no tiene */}
                                                 <div className="flex items-center gap-1.5">
-                                                    <div className="w-1.5 h-1.5 rounded-full bg-green-400" />
+                                                    <div className={`w-1.5 h-1.5 rounded-full ${p.basculaDescripcion ? 'bg-green-400' : 'bg-amber-400'}`} />
                                                     <span className="text-xs font-bold text-slate-600">
-                                                        #{p.id_Bascula ?? 'manual'}
+                                                        {p.basculaDescripcion ?? 'Ingreso manual'}
                                                     </span>
                                                 </div>
                                             </td>
