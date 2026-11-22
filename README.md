@@ -4,7 +4,7 @@ Sistema de pesaje de camiones para la Refinería de La Plata (YPF). Gestiona ór
 
 ## Estado del proyecto
 
-Los 78 casos de uso de la especificación tienen pantalla y backend; algunos están parciales. El detalle caso por caso, con lo que falta en cada uno, está en `Docs/Estado implementacion CU.md`.
+Los 78 casos de uso de la especificación están implementados con sus reglas principales. El detalle caso por caso, con las limitaciones conocidas, está en `Docs/Estado implementacion CU.md`.
 
 La integración con básculas y cámaras está **simulada**: el backend usa un Device Connector simulado (`Hardware:Modo = "Simulado"` en `appsettings.json`) y la pantalla de pesadas permite leer el peso de la báscula y detectar la patente con la cámara. Para conectar equipos reales se implementa `IDeviceConnector`.
 

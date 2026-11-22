@@ -24,9 +24,18 @@ namespace Backend.Controllers
             return await _context.Conductores.Where(c => c.Activo).ToListAsync();
         }
 
+        // El tipo de documento tiene que existir y estar activo (t_TipoDocumentoIdentidad).
+        private Task<bool> TipoDocumentoValidoAsync(byte idTipo) =>
+            _context.TiposDocumentoIdentidad.AnyAsync(t => t.Id_TipoDocumentoIdentidad == idTipo && t.Activo);
+
+        private const string TipoDocumentoInvalido = "El tipo de documento no existe o no está activo.";
+
         [HttpPost]
         public async Task<ActionResult<Conductor>> PostConductor(Conductor conductor)
         {
+            if (!await TipoDocumentoValidoAsync(conductor.Id_TipoDocumento))
+                return BadRequest(TipoDocumentoInvalido);
+
             _context.Conductores.Add(conductor);
             await _context.SaveChangesAsync();
             return CreatedAtAction("GetConductor", new { id = conductor.Id_Conductor }, conductor);
@@ -46,6 +55,9 @@ namespace Backend.Controllers
             {
                 return BadRequest();
             }
+
+            if (!await TipoDocumentoValidoAsync(conductor.Id_TipoDocumento))
+                return BadRequest(TipoDocumentoInvalido);
 
             _context.Entry(conductor).State = EntityState.Modified;
 

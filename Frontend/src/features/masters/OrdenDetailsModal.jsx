@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { X, Scale } from 'lucide-react';
 import agent from '../../api/agent';
+import { estadoDe } from '../planificacion/OrdenModales';
 
 const OrdenDetailsModal = ({ isOpen, onClose, orden }) => {
     const [pesadas, setPesadas] = useState([]);
@@ -59,7 +60,26 @@ const OrdenDetailsModal = ({ isOpen, onClose, orden }) => {
                             <span className="text-xs font-semibold text-blue-600 uppercase tracking-wide">Conductor</span>
                             <p className="text-gray-900 font-medium">{orden.conductor?.apellido || 'N/A'}</p>
                         </div>
+                        <div>
+                            <span className="text-xs font-semibold text-blue-600 uppercase tracking-wide">Estado</span>
+                            <p className="text-gray-900 font-medium">{estadoDe(orden).texto}</p>
+                        </div>
+                        <div>
+                            <span className="text-xs font-semibold text-blue-600 uppercase tracking-wide">
+                                {orden.ordenDetalle?.orden?.id_TipoOrden === 2 ? 'Centro de recepción' : 'Puesto de expedición'}
+                            </span>
+                            <p className="text-gray-900 font-medium">{orden.ordenDetalle?.orden?.puesto?.descripcion || 'N/A'}</p>
+                        </div>
                     </div>
+
+                    {orden.motivoReplanificacion && (
+                        <div className="text-sm bg-amber-50 border border-amber-100 rounded-lg p-3">
+                            <p className="font-semibold text-amber-800">
+                                Replanificada el {new Date(orden.fechaFinReplanificacion).toLocaleDateString('es-AR')}
+                            </p>
+                            <p className="text-amber-700">Motivo: {orden.motivoReplanificacion}</p>
+                        </div>
+                    )}
 
                     {/* Pesadas Table */}
                     <div>

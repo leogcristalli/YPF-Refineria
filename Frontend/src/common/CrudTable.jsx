@@ -52,6 +52,7 @@ const CrudTable = ({
     onCreate,
     canCreate = true, // false en maestros sin alta (Puntos de Menú)
     onEdit,
+    canEdit,         // opcional: (item) => bool; oculta Editar en las filas que no se pueden modificar
     onDelete,
     softDelete = true, // false en tablas sin baja lógica (Básculas, OT)
     actions
@@ -194,7 +195,7 @@ const CrudTable = ({
                                                 {actions && actions(item)}
 
                                                 {/* Edit Button */}
-                                                {onEdit && (
+                                                {onEdit && (!canEdit || canEdit(item)) && (
                                                     <button
                                                         onClick={() => onEdit(item)}
                                                         title="Editar"

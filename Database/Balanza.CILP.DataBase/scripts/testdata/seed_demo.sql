@@ -176,7 +176,8 @@ PRINT N'testdata Órdenes de transporte con planificación y pesadas';
 -- Descarga (recepción de crudo): entra cargado -> Bruto, sale vacío -> Tara.
 DECLARE @Kilos TINYINT = 1;
 DECLARE @OrdenEntrega TINYINT = 1, @AutorizacionDescarga TINYINT = 2;   -- sysdata t_TipoOrden
-DECLARE @OrdenBorrador TINYINT = 1;                                     -- sysdata t_EstadoOrden (la aplicación crea las órdenes en Borrador)
+-- sysdata t_EstadoOrden. Como en la aplicación: la orden nace Planificada y se cierra en Definitivo.
+DECLARE @OrdenBorrador TINYINT = 1, @OrdenDefinitiva TINYINT = 2, @OrdenPlanificada TINYINT = 4;
 DECLARE @OTPlanificado TINYINT = 2, @OTEjecucion TINYINT = 3, @OTEjecutado TINYINT = 5; -- sysdata t_EstadoOrdenTransporte
 DECLARE @Tara TINYINT = 1, @Bruto TINYINT = 2;                          -- sysdata t_TipoPesada
 DECLARE @Hoy DATETIME = CAST(CAST(GETDATE() AS DATE) AS DATETIME);
@@ -225,7 +226,7 @@ FETCH NEXT FROM cOT INTO @Remito;
 WHILE @@FETCH_STATUS = 0
 BEGIN
     INSERT INTO dbo.t_Orden (Id_EstadoOrden, Id_TipoOrden, Id_PuestoExpedicionRecepcion, FechaPlanificacion_Orden)
-    SELECT @OrdenBorrador, o.TipoOrden, pu.Id_PuestoExpedicionRecepcion, DATEADD(DAY, o.Dia, @Hoy)
+    SELECT CASE WHEN o.EstadoOT = @OTEjecutado THEN @OrdenDefinitiva ELSE @OrdenPlanificada END, o.TipoOrden, pu.Id_PuestoExpedicionRecepcion, DATEADD(DAY, o.Dia, @Hoy)
     FROM @OT o
     INNER JOIN dbo.t_PuestoExpedicionRecepcion pu ON pu.Descripcion_PuestoExpedicionRecepcion = o.Puesto
     WHERE o.Remito = @Remito;
@@ -243,8 +244,10 @@ BEGIN
     SET @IdDetalle = SCOPE_IDENTITY();
 
     INSERT INTO dbo.t_OrdenTransporte (Id_OrdenDetalle, Id_RazonSocialTransportista, Id_Vehiculo, Id_Conductor,
-                                       Id_EstadoOrdenTransporte, FechaPlanificacion_OrdenTransporte)
-    SELECT @IdDetalle, tr.Id_RazonSocial, ve.Id_Vehiculo, co.Id_Conductor, o.EstadoOT, DATEADD(DAY, o.Dia, @Hoy)
+                                       Id_EstadoOrdenTransporte, FechaPlanificacion_OrdenTransporte,
+                                       FechaFinPlanificacion_OrdenTransporte)
+    SELECT @IdDetalle, tr.Id_RazonSocial, ve.Id_Vehiculo, co.Id_Conductor, o.EstadoOT, DATEADD(DAY, o.Dia, @Hoy),
+           DATEADD(DAY, o.Dia - 1, @Hoy)   -- planificada el día anterior
     FROM @OT o
     INNER JOIN dbo.t_RazonSocial tr ON tr.CUIT_RazonSocial = o.CUITTransportista
     INNER JOIN dbo.t_Vehiculo ve ON ve.PatenteChasis_Vehiculo = o.Patente
@@ -284,25 +287,34 @@ END
 CLOSE cOT;
 DEALLOCATE cOT;
 
--- Las órdenes de las OT ejecutadas quedan cerradas igual que las cierra la aplicación al
--- registrar la segunda pesada (PesadasController): Activo = 0 y FechaCierre = fin de ejecución.
--- El estado de la orden queda en Borrador, que es el que pone la aplicación al crearla.
+-- Las órdenes del seed quedan como las deja la aplicación (OrdenesTransporteController y
+-- PesadasController): la de una OT ejecutada, cerrada (Activo = 0, FechaCierre = fin de
+-- ejecución, estado Definitivo); la de una OT pendiente, Planificada.
 -- Va fuera del cursor para corregir también las bases cargadas con versiones anteriores de
--- este script, que dejaban las OT ejecutadas sin cerrar y las órdenes en estado 4 (Planificado).
+-- este script (OT ejecutadas sin cerrar, órdenes en Borrador o en Planificado ya cerradas).
 -- Solo toca órdenes del seed (por remito) en esos estados, que la aplicación no genera, así
--- que no pisa cambios hechos desde la aplicación.
-DECLARE @OrdenPlanificadaSeedAnterior TINYINT = 4;
+-- que no pisa cambios hechos desde la aplicación (una orden anulada no se toca).
 UPDATE o
 SET  Activo_Orden      = CASE WHEN ot.Id_EstadoOrdenTransporte = @OTEjecutado THEN 0 ELSE o.Activo_Orden END
     ,FechaCierre_Orden = CASE WHEN ot.Id_EstadoOrdenTransporte = @OTEjecutado
                               THEN ISNULL(o.FechaCierre_Orden, ot.FechaFinEjecucion_OrdenTransporte) ELSE o.FechaCierre_Orden END
-    ,Id_EstadoOrden    = CASE WHEN o.Id_EstadoOrden = @OrdenPlanificadaSeedAnterior THEN @OrdenBorrador ELSE o.Id_EstadoOrden END
+    ,Id_EstadoOrden    = CASE WHEN ot.Id_EstadoOrdenTransporte = @OTEjecutado THEN @OrdenDefinitiva ELSE @OrdenPlanificada END
 FROM @OT s
 INNER JOIN dbo.t_OrdenDetalle d ON d.NroRemito_OrdenDetalle = s.Remito
 INNER JOIN dbo.t_Orden o ON o.Id_Orden = d.Id_Orden
 INNER JOIN dbo.t_OrdenTransporte ot ON ot.Id_OrdenDetalle = d.Id_OrdenDetalle
-WHERE (ot.Id_EstadoOrdenTransporte = @OTEjecutado AND o.FechaCierre_Orden IS NULL)
-   OR o.Id_EstadoOrden = @OrdenPlanificadaSeedAnterior;
+WHERE (ot.Id_EstadoOrdenTransporte = @OTEjecutado
+       AND (o.FechaCierre_Orden IS NULL OR o.Id_EstadoOrden IN (@OrdenBorrador, @OrdenPlanificada)))
+   OR (ot.Id_EstadoOrdenTransporte <> @OTEjecutado AND o.Activo_Orden = 1 AND o.Id_EstadoOrden = @OrdenBorrador);
+
+-- Una OT histórica replanificada (CU075), para que el filtro "Replanificado" del reporte
+-- CU080 tenga un resultado en la demo. Se reprogramó antes de ejecutarse.
+UPDATE ot
+SET  MotivoReplanificacion_OrdenTransporte   = N'Demora del transportista: se reprogramó la carga para el día siguiente.'
+    ,FechaFinReplanificacion_OrdenTransporte = DATEADD(HOUR, 18, DATEADD(DAY, -3, @Hoy))
+FROM dbo.t_OrdenTransporte ot
+INNER JOIN dbo.t_OrdenDetalle d ON d.Id_OrdenDetalle = ot.Id_OrdenDetalle
+WHERE d.NroRemito_OrdenDetalle = 2026004 AND ot.MotivoReplanificacion_OrdenTransporte IS NULL;
 
 COMMIT TRANSACTION;
 PRINT N'seed_demo OK';

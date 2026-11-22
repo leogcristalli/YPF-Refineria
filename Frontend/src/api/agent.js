@@ -77,6 +77,7 @@ const Hardware = {
 const OrdenesTransporte = {
     ...createCrud('/OrdenesTransporte'),
     cancelar: (id, motivo) => requests.patch(`/OrdenesTransporte/${id}/cancelar`, { motivo }),
+    replanificar: (id, fecha, motivo) => requests.patch(`/OrdenesTransporte/${id}/replanificar`, { fecha, motivo }),
     byPatente: (patente) => requests.get(`/OrdenesTransporte/ByPatente/${patente}`),
 };
 const Planificaciones = {

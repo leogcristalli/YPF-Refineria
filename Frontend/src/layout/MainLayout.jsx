@@ -2,8 +2,8 @@ import React from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     Truck, Scale, LayoutDashboard, Users, Package,
-    Briefcase, UserCheck, Monitor, Search,
-    Settings, LogOut, ChevronRight, FileText, BarChart2, Database,
+    Briefcase, UserCheck, Monitor,
+    LogOut, ChevronRight, FileText, BarChart2, Database,
     Camera, MapPin, ListChecks, Shield
 } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
@@ -122,21 +122,8 @@ const MainLayout = () => {
             <div className="flex-1 flex flex-col min-w-0 bg-slate-50 relative overflow-hidden">
                 {/* Top Header */}
                 <header className="h-20 bg-white/80 backdrop-blur-md border-b border-slate-200 px-8 flex items-center justify-between sticky top-0 z-40">
-                    <div className="flex items-center gap-4 flex-1">
-                        <div className="relative max-w-md w-full">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                            <input
-                                type="text"
-                                placeholder="Buscar orden de transporte, patente o guía..."
-                                className="w-full bg-slate-100 border-none rounded-full py-2.5 pl-10 pr-4 text-sm focus:ring-2 focus:ring-blue-500/20 transition-all font-medium"
-                            />
-                        </div>
-                    </div>
+                    <div className="flex-1"></div>
                     <div className="flex items-center gap-6">
-                        <button className="text-slate-500 hover:text-blue-600 transition-colors">
-                            <Settings size={20} />
-                        </button>
-                        <div className="w-px h-6 bg-slate-200 mx-2"></div>
                         <div className="flex items-center gap-3">
                             <div className="text-right">
                                 <p className="text-sm font-bold leading-none">Planta La Plata</p>
