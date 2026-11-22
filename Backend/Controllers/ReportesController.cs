@@ -1,11 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Backend.Auth;
 using Backend.Data;
 
 namespace Backend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Permiso(PuntoMenu.Reportes)]
     public class ReportesController : ControllerBase
     {
         // Valores de los datos de sistema (t_EstadoOrdenTransporte, t_TipoPesada).
@@ -133,6 +135,7 @@ namespace Backend.Controllers
         // KPIs del dashboard. El tonelaje es el peso NETO (bruto - tara) de las OT cerradas
         // (estado Ejecutado); "hoy" toma las que se cerraron hoy. Se informa en toneladas.
         [HttpGet("kpis")]
+        [Permiso]   // Panel de Control: cualquier usuario logueado
         public async Task<ActionResult> GetKpis()
         {
             var hoy = DateTime.Today;

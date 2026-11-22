@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Backend.Auth;
 using Backend.Data;
 using Backend.Models;
 
@@ -7,6 +8,7 @@ namespace Backend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Permiso(PuntoMenu.Productos, LecturaLibre = true)]
     public class ProductosController : ControllerBase
     {
         private readonly AppDbContext _context;
