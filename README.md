@@ -5,13 +5,12 @@ Aplicación web para planificar, ejecutar y auditar el pesaje de camiones que in
 Proyecto Final de la carrera de Ingeniería en Sistemas de Información (Universidad Tecnológica Nacional), 2026. Es un proyecto **académico**: no tiene relación ni afiliación con YPF ni con ninguna otra empresa, y todos los datos incluidos son ficticios.
 
 <!-- Reemplazar por una captura o GIF de la aplicación, por ejemplo: ![Gestión de Pesadas](Docs/img/demo.gif) -->
-> *Captura de pantalla pendiente.*
 
 ## Funcionalidades principales
 
 - **Planificación logística:** autorizaciones de descarga (recepción de crudo) y órdenes de entrega (despacho de refinados), con control de capacidad y reserva de volumen en los tanques.
 - **Ciclo de vida de las órdenes:** Planificado, Replanificado (con motivo), Ejecución, Definitivo y Anulado, con reglas de modificación según el estado.
-- **Registro de pesadas:** identificación del camión por patente o cámara OCR, lectura automática de báscula o ingreso manual con motivo, tara y bruto según el tipo de orden, tolerancia por producto, cálculo del neto y ticket imprimible.
+- **Registro de pesadas:** identificación del camión por patente o por cámara OCR (simulada), lectura automática de báscula (simulada) o ingreso manual con motivo, tara y bruto según el tipo de orden, tolerancia por producto, cálculo del neto y ticket imprimible.
 - **Reportes y Panel de Control:** movimientos por período y por producto, duración promedio de las órdenes, ocupación por báscula e indicadores del día, siempre calculados sobre datos reales.
 - **Control de acceso:** inicio de sesión con JWT, roles configurables y permisos por pantalla, aplicados tanto en la API como en la interfaz.
 - **Auditoría:** cada alta y modificación registra fecha y usuario de la aplicación.
@@ -134,11 +133,3 @@ Usuarios de demostración (contraseña `Demo1234!`):
 - [Especificación funcional](Docs/CUs.md): casos de uso y reglas de negocio.
 - [Justificación de tecnologías](Docs/Justificacion_Tecnologia.md): elección del stack y herramientas para la toma de decisiones.
 - [Diagrama entidad-relación](Docs/DER.png): modelo de datos. Corresponde a una etapa anterior del diseño y puede no coincidir exactamente con el esquema actual; la referencia vigente es `Database/Balanza.CILP.DataBase/tables`.
-
-## Equipo
-
-| Integrante | GitHub | LinkedIn |
-|---|---|---|
-| Leonardo Cristalli | [@leogcristalli](https://github.com/leogcristalli) | [LinkedIn](#) <!-- completar --> |
-| Marcelo F. Villa Flores | [@villafloresmf](https://github.com/villafloresmf) | [LinkedIn](#) <!-- completar --> |
-| Miguel Rodríguez | [@Miguel58000](https://github.com/Miguel58000) | [LinkedIn](#) <!-- completar --> |

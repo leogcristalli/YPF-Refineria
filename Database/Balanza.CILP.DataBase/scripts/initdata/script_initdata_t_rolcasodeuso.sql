@@ -1,7 +1,7 @@
 ﻿PRINT N'initdata dbo.t_RolCasoDeUso'
 GO
 -- Asignación inicial de puntos de menú a los roles base, según la tabla de actores y casos de
--- uso de la Entrega 3. Ids de rol: script_initdata_t_rol.sql; ids de punto de menú:
+-- uso de la especificación. Ids de rol: script_initdata_t_rol.sql; ids de punto de menú:
 -- script_initdata_t_casodeuso.sql.
 --
 -- Solo inserta los pares (rol, punto) que no existen. Si desde la pantalla Roles y Permisos se
