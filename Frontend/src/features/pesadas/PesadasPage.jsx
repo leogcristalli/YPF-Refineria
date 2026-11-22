@@ -452,6 +452,7 @@ const PesadasPage = () => {
     // CU079: Ticket modal
     const [ticketData, setTicketData] = useState(null);
     const [loadingTicket, setLoadingTicket] = useState(false);
+    const [errorTicket, setErrorTicket] = useState('');
 
     const load = async () => {
         setLoading(true);
@@ -507,12 +508,13 @@ const PesadasPage = () => {
     // CU079: Emitir Ticket
     const handleEmitirTicket = async (idPlanificacion) => {
         setLoadingTicket(true);
+        setErrorTicket('');
         try {
             const ticket = await agent.Pesadas.ticket(idPlanificacion);
             setTicketData(ticket);
         } catch (err) {
             console.error(err);
-            alert(getErrorMessage(err, 'No se pudo generar el ticket. Verifique que la orden tenga registradas ambas pesadas (TARA y BRUTO).'));
+            setErrorTicket(getErrorMessage(err, 'No se pudo generar el ticket. Verifique que la orden tenga registradas ambas pesadas (TARA y BRUTO).'));
         } finally {
             setLoadingTicket(false);
         }
@@ -707,6 +709,17 @@ const PesadasPage = () => {
                     />
                 </div>
             </div>
+
+            {/* Error al emitir el ticket (CU079) */}
+            {errorTicket && (
+                <div role="alert" className="text-sm text-red-700 bg-red-50 border border-red-100 rounded-xl p-3 flex items-start gap-2">
+                    <AlertCircle size={16} className="shrink-0 mt-0.5" />
+                    <span className="flex-1">{errorTicket}</span>
+                    <button onClick={() => setErrorTicket('')} title="Cerrar" className="text-red-400 hover:text-red-700">
+                        <X size={16} />
+                    </button>
+                </div>
+            )}
 
             {/* Table */}
             <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
