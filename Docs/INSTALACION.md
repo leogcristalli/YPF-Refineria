@@ -160,11 +160,14 @@ npm run dev
 
 La aplicación queda disponible en `http://localhost:5173`.
 
+Antes de `npm run dev` y `npm run build` se ejecuta `scripts/sync-docs.mjs` (scripts `predev` y `prebuild`), que copia `Docs/Manual_Usuario_CILP.md` y `Docs/Cronograma_Capacitacion.md` a `Frontend/src/content/`. Son los textos que muestra la pantalla **Ayuda y Capacitación**. Para cambiar el manual o el cronograma se edita el archivo de `Docs/`; la carpeta `src/content/` es generada y no se versiona.
+
 El frontend se comunica con la API en `http://localhost:5033/api` (definido en `Frontend/src/api/agent.js`), y el backend acepta peticiones únicamente desde `http://localhost:5173` (CORS en `Backend/Program.cs`). Si se cambia alguno de los puertos, deben actualizarse ambos lugares.
 
 ## Inicio de sesión y permisos
 
 - **Login:** `POST /api/auth/login` con ID de red y contraseña. Devuelve un token JWT (vigencia de 8 horas, `Jwt:HorasVigencia`) con el usuario, sus roles y sus puntos de menú. El frontend lo guarda en `sessionStorage` (se borra al cerrar la pestaña), lo envía en cada petición y vuelve al login si la API responde 401.
+- **Doble factor (2FA):** TOTP según RFC 6238 (6 dígitos, paso de 30 s), compatible con Google Authenticator, Microsoft Authenticator y Authy. Los usuarios con alguno de los roles de `Auth:DobleFactor:RolesObligatorios` (en `appsettings.json`: Administrador de Sistema, de Negocio, de Recepción y de Despacho) deben usarlo, y quien ya lo configuró lo usa siempre. Con `Auth:DobleFactor:Habilitado = false` se desactiva. Con contraseña correcta, el login no devuelve la sesión sino un desafío de 5 minutos (otra clave y otra audiencia: el resto de la API no lo acepta) que solo sirve para `POST /api/auth/2fa/enrolar/iniciar`, `/2fa/enrolar/confirmar` y `/2fa/verificar`. El secreto se guarda cifrado (AES-GCM, clave derivada de `Jwt:Key`) en `t_Usuario`, un código no puede usarse dos veces y tras 5 intentos fallidos el usuario queda bloqueado 5 minutos. El Administrador de Sistema puede restablecerlo desde la pantalla Usuarios (`POST /api/usuarios/{id}/reiniciar-2fa`). Requiere publicar la versión actual del proyecto de base de datos, que agrega tres columnas a `t_Usuario`.
 - **Puntos de menú:** hay uno por pantalla (`t_CasoDeUso`). Cada rol tiene puntos de menú asignados y un usuario ve las pantallas de todos sus roles. Inicio es visible para cualquier usuario con sesión iniciada. Planificación Logística tiene dos puntos: Autorizaciones de Descarga y Órdenes de Entrega (una pestaña cada uno).
 - **API:** todos los endpoints exigen sesión iniciada, salvo el login. Cada controller exige su punto de menú (atributo `[Permiso]`; sin el punto responde 403). Las consultas de maestros, el Panel de Control y las pesadas del panel quedan abiertas a cualquier usuario con sesión porque alimentan otras pantallas.
 - **Auditoría:** cada conexión a la base registra al usuario de la aplicación (`dbo.pr_context_save`), de modo que `Audit_Insert_User` y `Audit_Update_User` guardan su ID de red. Los scripts ejecutados con `sqlcmd` quedan a nombre del usuario de Windows.
@@ -172,10 +175,20 @@ El frontend se comunica con la API en `http://localhost:5033/api` (definido en `
 - **Script frente a pantalla:** la publicación de la base solo **inserta lo que falta** (puntos de menú, los 8 roles base y la asignación inicial). Los nombres, las bajas, los roles nuevos y las asignaciones se administran desde las pantallas Puntos de Menú, Roles y Permisos y Usuarios, y una nueva publicación no los sobrescribe.
 - **Protecciones:** el rol Administrador de Sistema no se puede eliminar ni perder los puntos Roles y Permisos y Usuarios; esos dos puntos no se pueden dar de baja; no se puede quitar ese rol al último usuario que lo tiene, y ningún usuario puede darse de baja a sí mismo.
 
+## Pruebas automáticas
+
+El proyecto `Backend.Tests` (xUnit) prueba el doble factor: el algoritmo TOTP contra los vectores oficiales del RFC 6238, la codificación Base32 contra el ejemplo del RFC 4648, el rechazo de códigos reutilizados, vencidos o mal formados, y el cifrado del secreto. Se ejecutan desde la raíz del repositorio:
+
+```
+dotnet test Backend.Tests
+```
+
+El resto de las pruebas (pesadas, planificación, maestros, reportes y seguridad) son casos funcionales manuales, descritos en `Docs/Plan_de_Pruebas.md`.
+
 ## Limitaciones conocidas
 
 - **Permisos en el token:** los permisos viajan dentro del JWT. Un cambio de roles, de los puntos de menú de un rol o la baja de un usuario se aplica cuando el usuario vuelve a iniciar sesión (como máximo, al vencer el token a las 8 horas).
-- **Doble factor de autenticación (2FA):** fuera del alcance de esta versión.
+- **Doble factor de autenticación (2FA):** no hay códigos de recuperación (si se pierde el teléfono, el Administrador de Sistema lo restablece desde Usuarios). Los intentos fallidos se cuentan en memoria y se reinician con el backend. El secreto se cifra con una clave derivada de `Jwt:Key`: si esa clave cambia, los secretos guardados dejan de poder leerse y cada usuario debe configurar su autenticador de nuevo. Quien aún no lo configuró lo hace con solo su contraseña en el primer ingreso, por lo que conviene que los administradores lo configuren apenas se instala el sistema.
 - **Hardware simulado:** básculas y cámaras OCR se simulan con `SimulatedDeviceConnector` (`Hardware:Modo = "Simulado"`). La lectura de báscula se genera a partir de la orden y la cámara "detecta" un camión con orden pendiente. Para equipos reales se implementa otro conector con la interfaz `IDeviceConnector`.
 - **Volumen de los tanques:** representa reservas, no el stock real. Al cerrarse una descarga queda reservada la cantidad planificada (no el neto pesado), y las órdenes de entrega no descuentan volumen del tanque de origen.
 - **Órdenes de entrega:** tienen un solo detalle y una sola orden de transporte.
