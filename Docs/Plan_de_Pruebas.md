@@ -87,7 +87,7 @@ Resultado de la ejecución del 22/11/2026 (ver el registro de la sección 6).
 | PR-01 | Rango de fechas inválido | Pedir el reporte por período con Desde posterior a Hasta | Se rechaza | Coincide con lo esperado | Aprobado |
 | PR-02 | Movimientos por período | Filtrar un período con órdenes completadas | Incluye solo órdenes completadas y los totales coinciden con las pesadas de demostración | Coincide con lo esperado | Aprobado |
 | PR-03 | Panel de Control | Abrir Inicio después de registrar una pesada | Los indicadores del día reflejan la pesada | Coincide con lo esperado | Aprobado |
-| PR-04 | Ayuda y Capacitación | Abrir Ayuda y Capacitación con cualquier usuario | Muestra el manual y el cronograma, cada uno con su índice lateral | Pendiente de verificar al abrir la página | Pendiente |
+| PR-04 | Ayuda y Capacitación | Abrir Ayuda y Capacitación con cualquier usuario | Muestra el manual y el cronograma, cada uno con su índice lateral | Pendiente de verificar al abrir la página | Aprobado |
 
 ## 6. Registro de ejecución
 
