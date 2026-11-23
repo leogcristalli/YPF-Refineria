@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     Plus, Search, FileText, Filter, Calendar, ChevronDown,
     CheckCircle2, Clock, Eye, Pencil, Trash2, Ban
@@ -8,9 +8,39 @@ import MensajeError from '../../common/MensajeError';
 import { useAuth } from '../../auth/AuthContext';
 import { PUNTOS } from '../../auth/puntosMenu';
 import {
-    TIPO_ENTREGA, TIPO_DESCARGA, estadoDe, esEditable,
+    TIPO_ENTREGA, TIPO_DESCARGA, estadoDe, esEditable, esCancelable,
     OrdenFormModal, DetalleOrdenModal, CancelarOrdenModal
 } from './OrdenModales';
+
+// ─────────── Filtro por período (fecha planificada) ───────────
+const PERIODOS = [
+    { id: 'todos', label: 'Todos' },
+    { id: 'hoy', label: 'Hoy' },
+    { id: 'semana', label: 'Esta semana' },
+    { id: 'mes', label: 'Este mes' },
+    { id: 'mesAnterior', label: 'Mes anterior' },
+    { id: 'personalizado', label: 'Personalizado' },
+];
+
+const aISO = (d) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+// [desde, hasta] como AAAA-MM-DD (vacío = sin límite). Se compara contra la fecha planificada sin hora.
+const rangoPeriodo = ({ tipo, desde, hasta }) => {
+    const hoy = new Date();
+    const a = hoy.getFullYear(), m = hoy.getMonth(), d = hoy.getDate();
+    switch (tipo) {
+        case 'hoy': return [aISO(hoy), aISO(hoy)];
+        case 'semana': {
+            const dif = hoy.getDay() === 0 ? 6 : hoy.getDay() - 1;   // la semana empieza el lunes
+            return [aISO(new Date(a, m, d - dif)), aISO(new Date(a, m, d - dif + 6))];
+        }
+        case 'mes': return [aISO(new Date(a, m, 1)), aISO(new Date(a, m + 1, 0))];
+        case 'mesAnterior': return [aISO(new Date(a, m - 1, 1)), aISO(new Date(a, m, 0))];
+        case 'personalizado': return [desde || '', hasta || ''];
+        default: return ['', ''];
+    }
+};
 
 // ─────────── Página principal ───────────
 const AutorizacionesPage = () => {
@@ -22,6 +52,11 @@ const AutorizacionesPage = () => {
     const verEntregas = tienePunto(PUNTOS.ORDENES_ENTREGA);
     const [tab, setTab] = useState(verDescargas ? 'descarga' : 'despacho');
     const [search, setSearch] = useState('');
+    const [filtroEstado, setFiltroEstado] = useState('');
+    const [filtroProducto, setFiltroProducto] = useState('');
+    const [periodo, setPeriodo] = useState({ tipo: 'todos', desde: '', hasta: '' });
+    const [panelAbierto, setPanelAbierto] = useState(null);   // 'filtro' | 'periodo' | null
+    const barraRef = useRef(null);
     const [modalOpen, setModalOpen] = useState(false);
     const [detalleOrden, setDetalleOrden] = useState(null);
     const [editarOrden, setEditarOrden] = useState(null);
@@ -37,6 +72,24 @@ const AutorizacionesPage = () => {
 
     useEffect(() => { load(); }, []);
 
+    // Los estados y productos disponibles cambian con la pestaña: se limpian los filtros al cambiarla.
+    useEffect(() => { setFiltroEstado(''); setFiltroProducto(''); setPanelAbierto(null); }, [tab]);
+
+    // El panel abierto se cierra al hacer clic afuera o con Escape.
+    useEffect(() => {
+        if (!panelAbierto) return undefined;
+        const cerrarAfuera = (e) => {
+            if (barraRef.current && !barraRef.current.contains(e.target)) setPanelAbierto(null);
+        };
+        const cerrarConTecla = (e) => { if (e.key === 'Escape') setPanelAbierto(null); };
+        document.addEventListener('mousedown', cerrarAfuera);
+        document.addEventListener('keydown', cerrarConTecla);
+        return () => {
+            document.removeEventListener('mousedown', cerrarAfuera);
+            document.removeEventListener('keydown', cerrarConTecla);
+        };
+    }, [panelAbierto]);
+
     const handleDelete = async (item) => {
         if (window.confirm(`¿Está seguro de eliminar permanentemente la orden OT-${item.id_OrdenTransporte}? Esta acción eliminará los detalles y planificaciones asociadas.`)) {
             setError('');
@@ -50,6 +103,20 @@ const AutorizacionesPage = () => {
         }
     };
 
+    const esDeLaPestana = (item) => {
+        const tipo = item.ordenDetalle?.orden?.id_TipoOrden;
+        return tab === 'descarga' ? tipo === TIPO_DESCARGA : tipo === TIPO_ENTREGA;
+    };
+    const delTab = ordenes.filter(esDeLaPestana);
+    const estadosDisponibles = [...new Set(delTab.map(i => estadoDe(i).texto))]
+        .sort((a, b) => a.localeCompare(b, 'es'));
+    const productosDisponibles = [...new Set(delTab.map(i => i.ordenDetalle?.producto?.descripcion).filter(Boolean))]
+        .sort((a, b) => a.localeCompare(b, 'es'));
+    const [desde, hasta] = rangoPeriodo(periodo);
+    const rangoInvalido = Boolean(desde && hasta && desde > hasta);
+    const filtrosActivos = (filtroEstado ? 1 : 0) + (filtroProducto ? 1 : 0);
+    const etiquetaPeriodo = periodo.tipo === 'todos' ? 'Período' : PERIODOS.find(x => x.id === periodo.tipo).label;
+
     const filtered = ordenes.filter(item => {
         const tipo = item.ordenDetalle?.orden?.id_TipoOrden;
         const matchTab = tab === 'descarga' ? tipo === TIPO_DESCARGA : tipo === TIPO_ENTREGA;
@@ -57,8 +124,15 @@ const AutorizacionesPage = () => {
         const matchSearch = !q ||
             (item.ordenDetalle?.producto?.descripcion ?? '').toLowerCase().includes(q) ||
             (item.razonSocialTransportista?.descripcion ?? '').toLowerCase().includes(q) ||
+            (item.vehiculo?.patenteChasis ?? '').toLowerCase().includes(q) ||
+            `${item.conductor?.apellido ?? ''} ${item.conductor?.nombre ?? ''}`.toLowerCase().includes(q) ||
+            estadoDe(item).texto.toLowerCase().includes(q) ||
             String(item.id_OrdenTransporte).includes(q);
-        return matchTab && matchSearch;
+        const fecha = (item.fechaPlanificacion ?? '').split('T')[0];
+        const matchPeriodo = (!desde || (fecha && fecha >= desde)) && (!hasta || (fecha && fecha <= hasta));
+        const matchEstado = !filtroEstado || estadoDe(item).texto === filtroEstado;
+        const matchProducto = !filtroProducto || (item.ordenDetalle?.producto?.descripcion ?? '') === filtroProducto;
+        return matchTab && matchSearch && matchPeriodo && matchEstado && matchProducto;
     });
 
     // Estado real de la orden (t_EstadoOrden / t_EstadoOrdenTransporte).
@@ -120,7 +194,7 @@ const AutorizacionesPage = () => {
             </div>
 
             {/* Table card */}
-            <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+            <div className="bg-white rounded-3xl shadow-sm border border-slate-100">
                 <div className="p-6 border-b border-slate-50 flex flex-col md:flex-row gap-4 justify-between">
                     <div className="relative flex-1 max-w-md">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
@@ -132,17 +206,129 @@ const AutorizacionesPage = () => {
                             className="w-full bg-slate-50 border-none rounded-xl py-2.5 pl-10 pr-4 text-sm font-medium focus:ring-2 focus:ring-blue-500/20 outline-none"
                         />
                     </div>
-                    <div className="flex gap-2">
-                        <button className="p-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors">
-                            <Filter size={20} />
-                        </button>
-                        <button className="p-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors flex items-center gap-2 text-sm font-bold">
-                            <Calendar size={18} /> Período <ChevronDown size={14} />
-                        </button>
+                    <div className="flex gap-2" ref={barraRef}>
+                        {/* Filtros: estado y producto */}
+                        <div className="relative">
+                            <button
+                                type="button"
+                                title="Filtros"
+                                aria-haspopup="true"
+                                aria-expanded={panelAbierto === 'filtro'}
+                                onClick={() => setPanelAbierto(p => (p === 'filtro' ? null : 'filtro'))}
+                                className={`relative p-2.5 rounded-xl border transition-colors ${filtrosActivos
+                                    ? 'border-blue-300 bg-blue-50 text-blue-600'
+                                    : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                            >
+                                <Filter size={20} />
+                                {filtrosActivos > 0 && (
+                                    <span className="absolute -top-1.5 -right-1.5 bg-blue-600 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                                        {filtrosActivos}
+                                    </span>
+                                )}
+                            </button>
+                            {panelAbierto === 'filtro' && (
+                                <div className="absolute right-0 mt-2 w-64 bg-white border border-slate-200 rounded-2xl shadow-xl p-4 z-20 space-y-3">
+                                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest">
+                                        Estado
+                                        <select
+                                            value={filtroEstado}
+                                            onChange={e => setFiltroEstado(e.target.value)}
+                                            className="mt-1 w-full p-2 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 bg-white normal-case tracking-normal"
+                                        >
+                                            <option value="">Todos</option>
+                                            {estadosDisponibles.map(est => <option key={est} value={est}>{est}</option>)}
+                                        </select>
+                                    </label>
+                                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest">
+                                        Producto
+                                        <select
+                                            value={filtroProducto}
+                                            onChange={e => setFiltroProducto(e.target.value)}
+                                            className="mt-1 w-full p-2 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 bg-white normal-case tracking-normal"
+                                        >
+                                            <option value="">Todos</option>
+                                            {productosDisponibles.map(prod => <option key={prod} value={prod}>{prod}</option>)}
+                                        </select>
+                                    </label>
+                                    <button
+                                        type="button"
+                                        onClick={() => { setFiltroEstado(''); setFiltroProducto(''); }}
+                                        disabled={filtrosActivos === 0}
+                                        className="text-sm font-bold text-blue-600 hover:underline disabled:text-slate-300 disabled:no-underline"
+                                    >
+                                        Limpiar filtros
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Período: sobre la fecha planificada */}
+                        <div className="relative">
+                            <button
+                                type="button"
+                                aria-haspopup="true"
+                                aria-expanded={panelAbierto === 'periodo'}
+                                onClick={() => setPanelAbierto(p => (p === 'periodo' ? null : 'periodo'))}
+                                className={`p-2.5 rounded-xl border transition-colors flex items-center gap-2 text-sm font-bold ${periodo.tipo !== 'todos'
+                                    ? 'border-blue-300 bg-blue-50 text-blue-600'
+                                    : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                            >
+                                <Calendar size={18} /> {etiquetaPeriodo} <ChevronDown size={14} />
+                            </button>
+                            {panelAbierto === 'periodo' && (
+                                <div className="absolute right-0 mt-2 w-60 bg-white border border-slate-200 rounded-2xl shadow-xl p-2 z-20">
+                                    <p className="px-3 pt-2 pb-1 text-[11px] font-bold text-slate-400 uppercase tracking-widest">
+                                        Fecha planificada
+                                    </p>
+                                    {PERIODOS.map(opcion => (
+                                        <button
+                                            key={opcion.id}
+                                            type="button"
+                                            onClick={() => {
+                                                setPeriodo(prev => ({ ...prev, tipo: opcion.id }));
+                                                if (opcion.id !== 'personalizado') setPanelAbierto(null);
+                                            }}
+                                            className={`w-full text-left px-3 py-2 rounded-xl text-sm transition-colors ${periodo.tipo === opcion.id
+                                                ? 'bg-blue-50 text-blue-700 font-bold'
+                                                : 'text-slate-600 font-medium hover:bg-slate-50'}`}
+                                        >
+                                            {opcion.label}
+                                        </button>
+                                    ))}
+                                    {periodo.tipo === 'personalizado' && (
+                                        <div className="px-3 pt-2 pb-3 space-y-2">
+                                            <label className="block text-xs font-bold text-slate-500">
+                                                Desde
+                                                <input
+                                                    type="date"
+                                                    value={periodo.desde}
+                                                    max={periodo.hasta || undefined}
+                                                    onChange={e => setPeriodo(prev => ({ ...prev, desde: e.target.value }))}
+                                                    className="mt-1 w-full p-2 border border-slate-200 rounded-xl text-sm font-medium text-slate-700"
+                                                />
+                                            </label>
+                                            <label className="block text-xs font-bold text-slate-500">
+                                                Hasta
+                                                <input
+                                                    type="date"
+                                                    value={periodo.hasta}
+                                                    min={periodo.desde || undefined}
+                                                    onChange={e => setPeriodo(prev => ({ ...prev, hasta: e.target.value }))}
+                                                    className="mt-1 w-full p-2 border border-slate-200 rounded-xl text-sm font-medium text-slate-700"
+                                                />
+                                            </label>
+                                            {rangoInvalido && (
+                                                <p className="text-xs font-bold text-red-600">Desde no puede ser posterior a Hasta.</p>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
 
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto rounded-b-3xl">
                     <table className="w-full text-left">
                         <thead>
                             <tr className="text-slate-400 text-[11px] uppercase tracking-widest bg-slate-50/50">
@@ -248,7 +434,7 @@ const AutorizacionesPage = () => {
                                                         </button>
                                                     )}
                                                     {/* Cancelar (CU064 / CU070) */}
-                                                    {esActiva && (
+                                                    {esCancelable(item) && (
                                                         <button
                                                             onClick={() => setCancelarOrden(item)}
                                                             title="Cancelar orden"

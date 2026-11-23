@@ -32,11 +32,18 @@ export const estadoDe = (item) => {
     return { texto: item.estadoOrdenTransporte?.descripcion ?? orden?.estadoOrden?.descripcion ?? 'Planificado', tono: 'azul' };
 };
 
-// Se puede modificar, cancelar o replanificar: abierta y sin pesadas (ni en ejecución ni ejecutada).
+// Se puede modificar o replanificar: abierta y sin pesadas (ni en ejecución ni ejecutada).
 export const esEditable = (item) => {
     const orden = item.ordenDetalle?.orden;
     return orden?.activo !== false && !orden?.fechaCierre && item.activo !== false
         && item.id_EstadoOrdenTransporte !== OT_EN_EJECUCION && item.id_EstadoOrdenTransporte !== OT_EJECUTADO;
+};
+
+// Se puede cancelar mientras la orden no esté cerrada ni anulada, aunque ya tenga una primera pesada
+// (por ejemplo, si esa pesada se cargó mal: se cancela con motivo y se crea una orden nueva).
+export const esCancelable = (item) => {
+    const orden = item.ordenDetalle?.orden;
+    return orden?.activo !== false && !orden?.fechaCierre && item.activo !== false;
 };
 
 

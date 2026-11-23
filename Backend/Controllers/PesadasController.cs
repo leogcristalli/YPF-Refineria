@@ -43,8 +43,10 @@ namespace Backend.Controllers
         [Permiso]
         public async Task<ActionResult<IEnumerable<object>>> GetPesadas()
         {
+            // Orden cronológico (la más antigua primero): el Panel de Control toma las últimas del final.
             var pesadas = await _context.Pesadas
                 .AsNoTracking()
+                .OrderBy(p => p.Fecha).ThenBy(p => p.Id_Pesada)
                 .Select(p => new
                 {
                     p.Id_Pesada,

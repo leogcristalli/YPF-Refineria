@@ -53,6 +53,7 @@ namespace Backend.Controllers
                 .Include(ot => ot.Vehiculo)
                 .Include(ot => ot.Conductor)
                 .Include(ot => ot.RazonSocialTransportista)
+                .OrderByDescending(ot => ot.Id_OrdenTransporte)   // las más recientes primero
                 .ToListAsync();
         }
 

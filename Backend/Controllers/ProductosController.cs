@@ -21,7 +21,7 @@ namespace Backend.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Producto>>> GetProductos()
         {
-            return await _context.Productos.Where(p => p.Activo).ToListAsync();
+            return await _context.Productos.Where(p => p.Activo).OrderBy(p => p.Id_Producto).ToListAsync();
         }
 
         [HttpPost]

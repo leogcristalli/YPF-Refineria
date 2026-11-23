@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getErrorMessage } from '../api/agent';
 import MensajeError from './MensajeError';
-import { Trash2, Edit, Plus, AlertTriangle, X, Search } from 'lucide-react';
+import { Trash2, Edit, Plus, AlertTriangle, X, Search, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 
 // Modal de confirmación de eliminación.
 // softDelete = true: baja lógica (Activo = false); false: borrado definitivo.
@@ -43,6 +43,39 @@ const ConfirmDeleteModal = ({ isOpen, onClose, onConfirm, itemName, softDelete }
     );
 };
 
+// Valor de un campo; admite rutas anidadas ('vehiculo.patenteChasis').
+const valorDe = (item, field) =>
+    field ? String(field).split('.').reduce((o, k) => (o == null ? undefined : o[k]), item) : undefined;
+
+// Dato crudo como texto ('' si no hay o es un objeto).
+const crudoDe = (item, col) => {
+    const v = valorDe(item, col.field);
+    return v == null || typeof v === 'object' ? '' : String(v);
+};
+
+// Texto que ve el usuario en la celda: el de render() si devuelve texto; si no, el dato crudo.
+const textoDe = (item, col) => {
+    if (col.render) {
+        const r = col.render(item);
+        if (typeof r === 'string' || typeof r === 'number') return String(r);
+    }
+    return crudoDe(item, col);
+};
+
+// Valor para ordenar: el dato crudo (los números y las fechas ISO ordenan bien) o el texto visible.
+const claveDe = (item, col) => {
+    const v = valorDe(item, col.field);
+    if (typeof v === 'number') return v;
+    if (typeof v === 'boolean') return v ? 1 : 0;
+    if (typeof v === 'string') return v;
+    return textoDe(item, col);
+};
+
+const comparar = (a, b) => {
+    if (typeof a === 'number' && typeof b === 'number') return a - b;
+    return String(a).localeCompare(String(b), 'es', { numeric: true, sensitivity: 'base' });
+};
+
 // Tabla CRUD genérica con baja lógica y diseño premium
 const CrudTable = ({
     title,
@@ -61,6 +94,8 @@ const CrudTable = ({
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(false);
     const [search, setSearch] = useState('');
+    // Orden por columna: { idx, dir: 'asc' | 'desc' }; null = el orden en que llega de la API.
+    const [orden, setOrden] = useState(null);
     const [deleteModal, setDeleteModal] = useState({ open: false, id: null, name: null });
     // Error de la última acción sobre la tabla (ej. 409 al eliminar un registro en uso).
     const [error, setError] = useState('');
@@ -108,11 +143,30 @@ const CrudTable = ({
         }
     };
 
-    const filtered = data.filter(item =>
+    // Busca sobre lo que se ve en pantalla (render) y sobre el dato crudo, con rutas anidadas.
+    const q = search.trim().toLowerCase();
+    const filtered = !q ? data : data.filter(item =>
         columns.some(col =>
-            String(item[col.field] ?? '').toLowerCase().includes(search.toLowerCase())
+            textoDe(item, col).toLowerCase().includes(q) ||
+            crudoDe(item, col).toLowerCase().includes(q)
         )
     );
+
+    // Clic en el encabezado: ascendente, descendente y sin orden.
+    const alternarOrden = (idx) => setOrden(prev =>
+        !prev || prev.idx !== idx ? { idx, dir: 'asc' }
+            : prev.dir === 'asc' ? { idx, dir: 'desc' } : null
+    );
+
+    const visibles = !orden ? filtered : [...filtered].sort((x, y) => {
+        const col = columns[orden.idx];
+        const a = claveDe(x, col);
+        const b = claveDe(y, col);
+        const vacioA = a === '' || a == null;
+        const vacioB = b === '' || b == null;
+        if (vacioA || vacioB) return vacioA === vacioB ? 0 : (vacioA ? 1 : -1);   // vacíos siempre al final
+        return comparar(a, b) * (orden.dir === 'asc' ? 1 : -1);
+    });
 
     return (
         <div className="space-y-6">
@@ -160,9 +214,31 @@ const CrudTable = ({
                     <table className="w-full text-left">
                         <thead>
                             <tr className="text-slate-400 text-[11px] uppercase tracking-widest bg-slate-50/70 border-b border-slate-100">
-                                {columns.map((col, idx) => (
-                                    <th key={idx} className="px-6 py-4 font-bold">{col.header}</th>
-                                ))}
+                                {columns.map((col, idx) => {
+                                    const ordenable = col.field && col.sortable !== false;
+                                    const activa = orden?.idx === idx;
+                                    return (
+                                        <th
+                                            key={idx}
+                                            className="px-6 py-4 font-bold"
+                                            aria-sort={activa ? (orden.dir === 'asc' ? 'ascending' : 'descending') : undefined}
+                                        >
+                                            {ordenable ? (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => alternarOrden(idx)}
+                                                    title="Ordenar por esta columna"
+                                                    className="inline-flex items-center gap-1.5 uppercase tracking-widest font-bold hover:text-slate-600 transition-colors"
+                                                >
+                                                    {col.header}
+                                                    {activa
+                                                        ? (orden.dir === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />)
+                                                        : <ArrowUpDown size={12} className="opacity-40" />}
+                                                </button>
+                                            ) : col.header}
+                                        </th>
+                                    );
+                                })}
                                 <th className="px-6 py-4 font-bold text-right">Acciones</th>
                             </tr>
                         </thead>
@@ -175,7 +251,7 @@ const CrudTable = ({
                                         </td>
                                     </tr>
                                 ))
-                            ) : filtered.length === 0 ? (
+                            ) : visibles.length === 0 ? (
                                 <tr>
                                     <td colSpan={columns.length + 1} className="px-6 py-16 text-center">
                                         <div className="flex flex-col items-center gap-2 text-slate-400">
@@ -185,7 +261,7 @@ const CrudTable = ({
                                     </td>
                                 </tr>
                             ) : (
-                                filtered.map((item) => (
+                                visibles.map((item) => (
                                     <tr key={item[idField]} className="hover:bg-slate-50/80 transition-colors group">
                                         {columns.map((col, idx) => (
                                             <td key={idx} className="px-6 py-4 text-sm text-slate-700">

@@ -21,7 +21,7 @@ namespace Backend.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Bascula>>> Get()
         {
-            return await _context.Basculas.Where(b => b.Activo).ToListAsync();
+            return await _context.Basculas.Where(b => b.Activo).OrderBy(b => b.Id_Bascula).ToListAsync();
         }
 
         [HttpPost]

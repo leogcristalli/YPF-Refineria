@@ -25,6 +25,7 @@ namespace Backend.Controllers
         {
             var tanques = await _context.Tanques
                 .Where(t => t.Activo)
+                .OrderBy(t => t.Id_Tanque)
                 .Select(t => new
                 {
                     t.Id_Tanque,

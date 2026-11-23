@@ -21,7 +21,7 @@ namespace Backend.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<RazonSocial>>> Get()
         {
-            return await _context.RazonesSociales.Where(r => r.Activo).ToListAsync();
+            return await _context.RazonesSociales.Where(r => r.Activo).OrderBy(r => r.Id_RazonSocial).ToListAsync();
         }
 
         [HttpGet("{id}")]

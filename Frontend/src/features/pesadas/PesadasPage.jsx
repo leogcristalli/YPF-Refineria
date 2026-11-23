@@ -587,7 +587,7 @@ const PesadasPage = () => {
             info.producto.toLowerCase().includes(q) ||
             info.patente.toLowerCase().includes(q)
         );
-    });
+    }).sort((a, b) => (new Date(b.fecha) - new Date(a.fecha)) || (b.id_Pesada - a.id_Pesada));   // más recientes primero
 
     const tipoBadge = (tipo) => {
         if (tipo === 1) return <span className="px-2 py-1 rounded-md text-[11px] font-bold bg-slate-100 text-slate-600">TARA</span>;

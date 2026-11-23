@@ -21,7 +21,7 @@ namespace Backend.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Conductor>>> GetConductores()
         {
-            return await _context.Conductores.Where(c => c.Activo).ToListAsync();
+            return await _context.Conductores.Where(c => c.Activo).OrderBy(c => c.Id_Conductor).ToListAsync();
         }
 
         // El tipo de documento tiene que existir y estar activo (t_TipoDocumentoIdentidad).

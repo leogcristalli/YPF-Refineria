@@ -34,17 +34,16 @@ const BasculasPage = () => {
 
     return (
         <>
-            <CrudTable 
-                title="Gestión de Básculas" 
-                agent={agent.Basculas} 
-                columns={columns} 
+            <CrudTable
+                title="Gestión de Básculas"
+                agent={agent.Basculas}
+                columns={columns}
                 idField="id_Bascula"
                 onCreate={handleCreate}
                 onEdit={handleEdit}
-                softDelete={false}
             />
 
-            <BasculaForm 
+            <BasculaForm
                 isOpen={isFormOpen}
                 onClose={() => setIsFormOpen(false)}
                 onSuccess={handleSuccess}
