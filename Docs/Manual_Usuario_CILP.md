@@ -4,26 +4,46 @@ Bienvenido al sistema **CILP**. Este manual le guiará paso a paso para utilizar
 
 ---
 
-## 1. Inicio y cierre de sesión
+## Iniciar sesión
 
-### Iniciar sesión
-Al abrir la aplicación se muestra la pantalla de **inicio de sesión**.
+Al abrir la aplicación se muestra la pantalla de inicio de sesión.
 
-1.  Escriba su **ID de red** (ej: `YPF\USUARIO`). No distingue mayúsculas de minúsculas.
-2.  Escriba su **contraseña**.
-3.  Haga clic en **Ingresar**.
+1. Escriba su ID de red (ej: `YPF\USUARIO`). No distingue mayúsculas de minúsculas.
+2. Escriba su contraseña.
+3. Haga clic en **Ingresar**.
 
-Si los datos no son correctos, la pantalla muestra "Usuario o contraseña incorrectos". Si el usuario existe pero no tiene roles asignados, el sistema indica que consulte al administrador.
+Si los datos no son correctos, la pantalla muestra `"Usuario o contraseña incorrectos"`. Si el usuario existe pero no tiene roles asignados, el sistema indica que consulte al administrador.
 
 Si antes de iniciar sesión intentó abrir una pantalla, al ingresar el sistema lo lleva a esa pantalla, siempre que sus roles la permitan; si no, lo lleva a **Inicio**.
 
-### Duración de la sesión
-*   La sesión dura como máximo **8 horas** (un turno). Al vencer, el sistema vuelve a la pantalla de inicio de sesión con el aviso "La sesión venció".
-*   La sesión se guarda solo en la pestaña del navegador: **al cerrar la pestaña, la sesión se cierra**. Esto evita que otra persona use una sesión abierta en una PC compartida (por ejemplo, la de la báscula).
-*   Si un administrador cambia sus roles, los cambios se aplican la próxima vez que inicie sesión.
+## Verificación en dos pasos (2FA)
 
-### Cerrar sesión
-En la parte inferior del menú lateral se ven sus iniciales, su nombre y sus roles. Haga clic en el ícono de **salida** (a la derecha de su nombre) para cerrar la sesión y volver a la pantalla de inicio de sesión.
+Los usuarios con roles administrativos (Administrador de Sistema, de Negocio, de Recepción y de Despacho) deben usar un segundo factor: un código de 6 dígitos que genera una aplicación autenticadora en su teléfono (Google Authenticator, Microsoft Authenticator o Authy). Quien ya configuró su autenticador lo usa siempre, cualquiera sea su rol.
+
+### Primera vez (configuración)
+
+1. Escriba su ID de red y su contraseña y haga clic en **Ingresar**.
+2. Aparece la pantalla **Configurar doble factor** con un código QR. Instale una aplicación autenticadora en su teléfono, agregue una cuenta y escanee el código QR. Si no puede escanearlo, escriba a mano la clave que se muestra debajo.
+3. Escriba el código de 6 dígitos que muestra la aplicación y haga clic en **Verificar e ingresar**.
+
+### Los ingresos siguientes
+
+Después de la contraseña aparece **Verificación en dos pasos**. Escriba el código de 6 dígitos de la cuenta **CILP Refinería** y haga clic en **Verificar e ingresar**.
+
+- Cada código vale 30 segundos y solo se puede usar una vez: si acaba de usarlo, espere al siguiente.
+- Tiene 5 minutos, desde que escribió la contraseña, para completar la verificación. Si vence, use **Volver al inicio de sesión** y empiece de nuevo.
+- Después de 5 códigos incorrectos, el ingreso se bloquea durante 5 minutos.
+- Si perdió o cambió su teléfono, pídale al Administrador de Sistema que restablezca su doble factor (ver la sección *Usuarios*).
+
+## Duración de la sesión
+
+- La sesión dura como máximo 8 horas (un turno). Al vencer, el sistema vuelve a la pantalla de inicio de sesión con el aviso `"La sesión venció"`.
+- La sesión se guarda solo en la pestaña del navegador: al cerrar la pestaña, la sesión se cierra. Esto evita que otra persona use una sesión abierta en una PC compartida (por ejemplo, la de la báscula).
+- Si un administrador cambia sus roles, los cambios se aplican la próxima vez que inicie sesión.
+
+## Cerrar sesión
+
+En la parte inferior del menú lateral se ven sus iniciales, su nombre y sus roles. Haga clic en el ícono de salida (a la derecha de su nombre) para cerrar la sesión y volver a la pantalla de inicio de sesión.
 
 ---
 

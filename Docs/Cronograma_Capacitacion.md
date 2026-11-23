@@ -16,7 +16,7 @@ Que cada perfil de usuario pueda operar el sistema en forma autónoma desde el p
 
 | Sesión | Destinatarios (roles) | Contenidos | Duración |
 |---|---|---|---|
-| **S1 — Administración del sistema** | Administrador de Sistema | Usuarios, roles y puntos de menú, asignación de permisos, básculas y dispositivos, estado de hardware, restablecimiento de contraseñas | 4 h |
+| **S1 — Administración del sistema** | Administrador de Sistema | Usuarios, roles y puntos de menú, asignación de permisos, básculas y dispositivos, estado de hardware, restablecimiento de contraseñas y del doble factor de autenticación | 4 h |
 | **S2 — Datos maestros** | Administrador de Negocio | Vehículos, conductores, productos y tolerancias, razones sociales, puestos, tanques y capacidades | 3 h |
 | **S3 — Planificación logística** | Administradores de Recepción y de Despacho, Planificadores de Carga y Descarga | Autorizaciones de descarga y órdenes de entrega, control de capacidad de tanques, órdenes de transporte, estados, modificación, replanificación y anulación | 4 h |
 | **S4 — Operación de báscula** | Operadores de báscula (rol Conductor Transporte) | Identificación del camión por patente y por cámara, pesada automática y manual con motivo, tolerancia, cierre de la orden, ticket, contingencias (báscula sin comunicación o con certificado vencido) | 4 h + 2 h de práctica supervisada en puesto |
