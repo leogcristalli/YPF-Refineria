@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
 import { rutaPermitida } from '../auth/puntosMenu';
+import { version } from '../../package.json';
 
 const MainLayout = () => {
     const location = useLocation();
@@ -118,7 +119,7 @@ const MainLayout = () => {
                         </button>
                     </div>
                     <div className="flex items-center justify-between text-[10px] text-slate-600 font-mono">
-                        <span>VERSION 0.9.0-BETA</span>
+                        <span>VERSION {version}</span>
                         <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
                     </div>
                 </div>

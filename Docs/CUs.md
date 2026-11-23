@@ -72,7 +72,7 @@ Pila tecnológica definida para el proyecto:
 * **Frontend:** React JS (Single Page Application).
 * **Base de Datos:** SQL Server.
 * **Integración de Hardware:** módulo "Device Connector" en .NET detrás de la interfaz `IDeviceConnector`. La implementación incluida es un **simulador** (`Hardware:Modo = "Simulado"`) de básculas y cámaras OCR; un conector real solo debe implementar la misma interfaz.
-* **Seguridad:** inicio de sesión con JWT y control de acceso basado en roles (RBAC). La autenticación con doble factor (2FA) quedó fuera del alcance de esta versión.
+* **Seguridad:** inicio de sesión con JWT y control de acceso basado en roles (RBAC) y autenticación con doble factor (2FA) con código QR.
 
 ---
 
