@@ -30,6 +30,8 @@ namespace Backend.Controllers
         private const byte EstadoOtReplanificado = 4;
         private const byte TipoOrdenEntrega = 1;           // t_TipoOrden: 1 = Orden de Entrega, 2 = Autorización de Descarga
         private const byte TipoOrdenDescarga = 2;
+        // La cantidad se guarda en DECIMAL(10,2): ese es el máximo que admite la base de datos.
+        private const decimal CantidadMaximaKg = 99_999_999.99m;
         private const byte UnidadKilos = 1;                // t_UnidadMedida
         private const byte UnidadLitros = 3;
 
@@ -53,7 +55,6 @@ namespace Backend.Controllers
                 .Include(ot => ot.Vehiculo)
                 .Include(ot => ot.Conductor)
                 .Include(ot => ot.RazonSocialTransportista)
-                .OrderByDescending(ot => ot.Id_OrdenTransporte)   // las más recientes primero
                 .ToListAsync();
         }
 
@@ -122,8 +123,14 @@ namespace Backend.Controllers
         {
             var esDescarga = tipoOrden == TipoOrdenDescarga;
 
+            // Sin los dos controles siguientes, 0,004 pasaría el "mayor a cero" pero la base lo
+            // redondea a 0,00, y un valor enorme provocaría un error de desbordamiento en SQL Server.
             if (dto.Cantidad <= 0)
                 return "La cantidad debe ser mayor a cero.";
+            if (dto.Cantidad != decimal.Round(dto.Cantidad, 2))
+                return "La cantidad admite como máximo dos decimales.";
+            if (dto.Cantidad > CantidadMaximaKg)
+                return $"La cantidad no puede superar {CantidadMaximaKg:N2} kg.";
             if (dto.NroRemito <= 0)
                 return "El número de remito debe ser mayor a cero.";
 

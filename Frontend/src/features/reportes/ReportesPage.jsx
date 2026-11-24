@@ -10,7 +10,7 @@ import MensajeError from '../../common/MensajeError';
 // ─────────── Sub-componentes ───────────
 
 const KpiCard = ({ title, value, unit, subtitle, icon: Icon, color, loading }) => (
-    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+    <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-100 min-w-0">
         <div className="flex justify-between items-start mb-4">
             <div className={`p-3 rounded-xl ${color}`}>
                 <Icon size={22} className="text-white" />
@@ -148,8 +148,19 @@ const ReportesPage = () => {
         ? Math.max(...movProducto.map(p => Number(p.totalKgNeto)), 1)
         : 1;
 
+    const handlePrint = () => {
+        document.body.classList.add('reports-printing');
+        const cleanup = () => {
+            document.body.classList.remove('reports-printing');
+            window.removeEventListener('afterprint', cleanup);
+        };
+        window.addEventListener('afterprint', cleanup);
+        window.print();
+        window.setTimeout(cleanup, 1500);
+    };
+
     return (
-        <div className="space-y-6">
+        <div className="reports-print-root space-y-6">
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
@@ -158,21 +169,21 @@ const ReportesPage = () => {
                         Planta La Plata (CILP) · CU080 · CU081 · CU082 · CU083
                     </p>
                 </div>
-                <div className="flex gap-2">
+                <div className="reports-no-print flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
                     <button
                         onClick={() => {
                             if (tab === 'general') loadGeneral();
                             if (tab === 'periodos') loadPeriodo();
                             if (tab === 'productos') loadProducto();
                         }}
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-50 transition-colors"
+                        className="flex w-full items-center justify-center gap-2 px-4 py-2 rounded-xl border sm:w-auto border-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-50 transition-colors"
                     >
                         <RefreshCw size={16} className={loading || loadingPeriodo || loadingProducto ? 'animate-spin' : ''} />
                         Actualizar
                     </button>
                     <button
-                        onClick={() => window.print()}
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/20"
+                        onClick={handlePrint}
+                        className="flex w-full items-center justify-center gap-2 px-4 py-2 rounded-xl bg-blue-600 sm:w-auto text-white text-sm font-bold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/20"
                     >
                         <Download size={16} />
                         Exportar / Imprimir
@@ -181,22 +192,22 @@ const ReportesPage = () => {
             </div>
 
             {/* Navigation Tabs */}
-            <div className="flex bg-white p-1 rounded-2xl shadow-sm border border-slate-100 max-w-xl">
+            <div className="reports-no-print flex w-full max-w-xl flex-col gap-1 bg-white p-1 rounded-2xl shadow-sm border border-slate-100 sm:flex-row">
                 <button
                     onClick={() => setTab('general')}
-                    className={`flex-1 py-2.5 rounded-xl font-bold text-sm transition-all ${tab === 'general' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}
+                    className={`min-w-0 flex-1 px-2 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all ${tab === 'general' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}
                 >
                     Operaciones & Básculas
                 </button>
                 <button
                     onClick={() => setTab('periodos')}
-                    className={`flex-1 py-2.5 rounded-xl font-bold text-sm transition-all ${tab === 'periodos' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}
+                    className={`min-w-0 flex-1 px-2 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all ${tab === 'periodos' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}
                 >
                     Movimientos por Período (CU080)
                 </button>
                 <button
                     onClick={() => setTab('productos')}
-                    className={`flex-1 py-2.5 rounded-xl font-bold text-sm transition-all ${tab === 'productos' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}
+                    className={`min-w-0 flex-1 px-2 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all ${tab === 'productos' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}
                 >
                     Por Producto (CU081)
                 </button>
@@ -336,8 +347,8 @@ const ReportesPage = () => {
                     </div>
 
                     {/* Detail table – Recent OTs with duration */}
-                    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                        <div className="p-6 border-b border-slate-50 flex justify-between items-center">
+                    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden min-w-0">
+                        <div className="p-4 sm:p-6 border-b border-slate-50 flex justify-between items-center gap-3">
                             <div>
                                 <h3 className="font-bold text-slate-800">Detalle de Órdenes de Transporte</h3>
                                 <p className="text-xs text-slate-400 mt-0.5">Duración registrada por OT · CU082</p>
@@ -413,7 +424,7 @@ const ReportesPage = () => {
             {tab === 'periodos' && (
                 <div className="space-y-6 animate-in fade-in duration-300">
                     {/* Filtros de Fecha y Tipo de Movimiento */}
-                    <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col sm:flex-row items-end gap-4">
+                    <div className="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col sm:flex-row items-stretch sm:items-end gap-4">
                         <div className="flex-1 w-full sm:w-auto">
                             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
                                 <Calendar size={13} className="inline mr-1" /> Fecha Desde
@@ -467,7 +478,7 @@ const ReportesPage = () => {
                         <button
                             onClick={loadPeriodo}
                             disabled={loadingPeriodo}
-                            className="bg-blue-600 text-white font-bold px-6 py-2.5 rounded-xl hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/20 flex items-center gap-2 text-sm shrink-0"
+                            className="w-full sm:w-auto justify-center bg-blue-600 text-white font-bold px-6 py-2.5 rounded-xl hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/20 flex items-center gap-2 text-sm shrink-0"
                         >
                             {loadingPeriodo ? <Loader2 size={16} className="animate-spin" /> : <Filter size={16} />}
                             Filtrar Período
@@ -501,8 +512,8 @@ const ReportesPage = () => {
                     )}
 
                     {/* Tabla de Movimientos por Período */}
-                    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                        <div className="p-6 border-b border-slate-50 flex justify-between items-center">
+                    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden min-w-0">
+                        <div className="p-4 sm:p-6 border-b border-slate-50 flex justify-between items-center gap-3">
                             <div>
                                 <h3 className="font-bold text-slate-800">Registros de Movimientos en Período</h3>
                                 <p className="text-xs text-slate-400 mt-0.5">CU080 · Órdenes de transporte y pesadas ejecutadas</p>
@@ -607,7 +618,7 @@ const ReportesPage = () => {
             {tab === 'productos' && (
                 <div className="space-y-6 animate-in fade-in duration-300">
                     {/* Filtros de Fecha */}
-                    <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col sm:flex-row items-end gap-4">
+                    <div className="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col sm:flex-row items-stretch sm:items-end gap-4">
                         <div className="flex-1 w-full sm:w-auto">
                             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
                                 <Calendar size={13} className="inline mr-1" /> Fecha Desde
@@ -633,7 +644,7 @@ const ReportesPage = () => {
                         <button
                             onClick={loadProducto}
                             disabled={loadingProducto}
-                            className="bg-blue-600 text-white font-bold px-6 py-2.5 rounded-xl hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/20 flex items-center gap-2 text-sm shrink-0"
+                            className="w-full sm:w-auto justify-center bg-blue-600 text-white font-bold px-6 py-2.5 rounded-xl hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/20 flex items-center gap-2 text-sm shrink-0"
                         >
                             {loadingProducto ? <Loader2 size={16} className="animate-spin" /> : <Filter size={16} />}
                             Filtrar Período
@@ -641,8 +652,8 @@ const ReportesPage = () => {
                     </div>
 
                     {/* Tabla de Movimientos por Producto */}
-                    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                        <div className="p-6 border-b border-slate-50 flex justify-between items-center">
+                    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden min-w-0">
+                        <div className="p-4 sm:p-6 border-b border-slate-50 flex justify-between items-center gap-3">
                             <div>
                                 <h3 className="font-bold text-slate-800">Carga Movilizada por Producto / Material</h3>
                                 <p className="text-xs text-slate-400 mt-0.5">CU081 · Agrupación por tipo de producto y tonelaje neto acumulado</p>

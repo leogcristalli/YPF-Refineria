@@ -31,14 +31,22 @@ const TicketModal = ({ isOpen, onClose, ticketData }) => {
     if (!isOpen || !ticketData) return null;
 
     const handlePrint = () => {
+        // Aísla la impresión del ticket sin afectar otras pantallas.
+        document.body.classList.add('ticket-printing');
+        const cleanup = () => {
+            document.body.classList.remove('ticket-printing');
+            window.removeEventListener('afterprint', cleanup);
+        };
+        window.addEventListener('afterprint', cleanup);
         window.print();
+        window.setTimeout(cleanup, 1500);
     };
 
     return createPortal(
-        <div className="ticket-print-root fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-            <div className="ticket-print-card bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[92vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-200">
+        <div className="ticket-print-root fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-2 sm:p-4">
+            <div className="ticket-print-card bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[96dvh] sm:max-h-[92vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-200">
                 {/* Header Ticket */}
-                <div className="ticket-no-print bg-slate-900 px-6 py-5 flex justify-between items-center rounded-t-2xl text-white">
+                <div className="ticket-no-print bg-slate-900 px-4 sm:px-6 py-4 sm:py-5 flex justify-between items-center rounded-t-2xl text-white">
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-white/10 rounded-xl">
                             <Scale size={20} className="text-blue-400" />
@@ -54,7 +62,7 @@ const TicketModal = ({ isOpen, onClose, ticketData }) => {
                 </div>
 
                 {/* Body Ticket Imprimible */}
-                <div className="p-6 space-y-5 font-sans" id="ticket-print-area">
+                <div className="p-4 sm:p-6 space-y-4 sm:space-y-5 font-sans" id="ticket-print-area">
                     {/* Encabezado formal */}
                     <div className="border-b border-dashed border-slate-300 pb-4 text-center">
                         <p className="text-xs uppercase tracking-widest font-black text-slate-500">Sistema de Balanzas CILP</p>
@@ -65,7 +73,7 @@ const TicketModal = ({ isOpen, onClose, ticketData }) => {
                     </div>
 
                     {/* Datos de Transporte */}
-                    <div className="grid grid-cols-2 gap-3 text-xs border-b border-dashed border-slate-300 pb-4">
+                    <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-3 text-xs border-b border-dashed border-slate-300 pb-4">
                         <div>
                             <p className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Orden de Transporte</p>
                             <p className="font-bold text-slate-800 text-sm">OT-{ticketData.idOrdenTransporte}</p>
@@ -280,9 +288,9 @@ const RegistrarPesadaModal = ({ isOpen, onClose, onSuccess, initialPlanId }) => 
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg animate-in fade-in zoom-in-95 duration-200">
-                <div className="bg-linear-to-r from-blue-700 to-blue-600 px-6 py-5 flex justify-between items-center rounded-t-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-2 sm:p-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[96dvh] overflow-y-auto animate-in fade-in zoom-in-95 duration-200">
+                <div className="bg-linear-to-r from-blue-700 to-blue-600 px-4 sm:px-6 py-4 sm:py-5 flex justify-between items-center rounded-t-2xl">
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-white/10 rounded-xl"><Scale size={20} className="text-white" /></div>
                         <h3 className="text-lg font-bold text-white">Registrar Pesada</h3>
@@ -291,7 +299,7 @@ const RegistrarPesadaModal = ({ isOpen, onClose, onSuccess, initialPlanId }) => 
                         <X size={22} />
                     </button>
                 </div>
-                <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4">
                     <div>
                         <label className="block text-sm font-semibold text-slate-700 mb-1.5">
                             Orden de Transporte
@@ -323,7 +331,7 @@ const RegistrarPesadaModal = ({ isOpen, onClose, onSuccess, initialPlanId }) => 
                         )}
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <div className="flex items-center justify-between mb-1.5">
                                 <label className="block text-sm font-semibold text-slate-700">Peso (kg)</label>
@@ -409,7 +417,7 @@ const RegistrarPesadaModal = ({ isOpen, onClose, onSuccess, initialPlanId }) => 
                         </div>
                     )}
 
-                    <div className="flex gap-3 pt-2">
+                    <div className="flex flex-col-reverse sm:flex-row gap-3 pt-2">
                         <button
                             type="button"
                             onClick={onClose}
@@ -612,7 +620,7 @@ const PesadasPage = () => {
                 </div>
                 <button
                     onClick={() => { setSelectedPlanForModal(''); setModalOpen(true); }}
-                    className="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 hover:bg-blue-700 shadow-lg shadow-blue-500/20 transition-all active:scale-95"
+                    className="w-full sm:w-auto justify-center bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 hover:bg-blue-700 shadow-lg shadow-blue-500/20 transition-all active:scale-95"
                 >
                     <Plus size={18} /> Nueva Pesada
                 </button>
@@ -640,7 +648,7 @@ const PesadasPage = () => {
                     <button
                         type="submit"
                         disabled={searchingPatente || !patenteSearch.trim()}
-                        className="bg-slate-900 text-white px-5 py-2 rounded-xl text-sm font-bold hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                        className="w-full sm:w-auto bg-slate-900 text-white px-5 py-2 rounded-xl text-sm font-bold hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                     >
                         {searchingPatente ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
                         Buscar por Patente
@@ -649,7 +657,7 @@ const PesadasPage = () => {
                         type="button"
                         onClick={handleDetectarCamara}
                         disabled={searchingPatente}
-                        className="bg-white text-slate-700 border border-slate-200 px-5 py-2 rounded-xl text-sm font-bold hover:bg-slate-50 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                        className="w-full sm:w-auto bg-white text-slate-700 border border-slate-200 px-5 py-2 rounded-xl text-sm font-bold hover:bg-slate-50 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                     >
                         <Camera size={16} />
                         Detectar con cámara

@@ -32,15 +32,16 @@ export const estadoDe = (item) => {
     return { texto: item.estadoOrdenTransporte?.descripcion ?? orden?.estadoOrden?.descripcion ?? 'Planificado', tono: 'azul' };
 };
 
-// Se puede modificar o replanificar: abierta y sin pesadas (ni en ejecución ni ejecutada).
+// Se puede modificar, replanificar o eliminar: abierta y sin pesadas (ni en ejecución ni ejecutada).
 export const esEditable = (item) => {
     const orden = item.ordenDetalle?.orden;
     return orden?.activo !== false && !orden?.fechaCierre && item.activo !== false
         && item.id_EstadoOrdenTransporte !== OT_EN_EJECUCION && item.id_EstadoOrdenTransporte !== OT_EJECUTADO;
 };
 
-// Se puede cancelar mientras la orden no esté cerrada ni anulada, aunque ya tenga una primera pesada
-// (por ejemplo, si esa pesada se cargó mal: se cancela con motivo y se crea una orden nueva).
+// Se puede cancelar (CU064 / CU070): abierta, es decir ni cerrada ni anulada. A diferencia de
+// modificar o replanificar, también se puede cancelar una orden en ejecución (con pesadas);
+// es la misma regla que aplica el backend en PATCH /OrdenesTransporte/{id}/cancelar.
 export const esCancelable = (item) => {
     const orden = item.ordenDetalle?.orden;
     return orden?.activo !== false && !orden?.fechaCierre && item.activo !== false;
@@ -122,6 +123,12 @@ export const OrdenFormModal = ({ isOpen, onClose, onSuccess, orden, tipoOrden })
             setError(`Capacidad insuficiente en el tanque ${tanque.codigo}: disponible ${Math.floor(disponible).toLocaleString('es-AR')} L, la carga requiere ${Math.ceil(litros).toLocaleString('es-AR')} L.`);
             return;
         }
+        // Red de seguridad: aunque el navegador no valide (pegado, extensiones), no se envía una cantidad inválida.
+        const cantidadIngresada = parseFloat(formData.cantidad);
+        if (!(cantidadIngresada > 0)) {
+            setError('La cantidad debe ser mayor a cero.');
+            return;
+        }
         setLoading(true);
         try {
             const payload = {
@@ -195,7 +202,20 @@ export const OrdenFormModal = ({ isOpen, onClose, onSuccess, orden, tipoOrden })
                         </div>
                         <div>
                             <label className="block text-sm font-semibold text-slate-700 mb-1.5">Cantidad (KG) *</label>
-                            <input type="number" name="cantidad" value={formData.cantidad} onChange={handleChange} min="0.01" step="0.01" placeholder="Ej: 30000" className={claseCampo} required />
+                            <input
+                                type="number"
+                                name="cantidad"
+                                value={formData.cantidad}
+                                onChange={handleChange}
+                                // No se puede ni tipear el signo menos, el + ni la notación científica.
+                                onKeyDown={(e) => ['-', '+', 'e', 'E'].includes(e.key) && e.preventDefault()}
+                                min="0.01"
+                                max="99999999.99"
+                                step="0.01"
+                                placeholder="Ej: 30000"
+                                className={claseCampo}
+                                required
+                            />
                         </div>
                     </div>
 

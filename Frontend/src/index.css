@@ -1,52 +1,30 @@
 @import "tailwindcss";
 
-@theme {
-  --color-ypf-blue: #004d9c;
-  --color-ypf-yellow: #ffcc00;
-  --color-industrial-gray: #f2f4f7;
-  --color-industrial-dark: #1a1f26;
-  --color-glass: rgba(255, 255, 255, 0.7);
-}
-
-@layer base {
-  body {
-    @apply bg-industrial-gray text-slate-900 font-sans;
-  }
-}
-
-@layer components {
-  .glass-card {
-    @apply bg-glass backdrop-blur-md border border-white/20 shadow-xl rounded-2xl;
-  }
-  
-  .btn-primary {
-    @apply px-4 py-2 bg-ypf-blue text-white rounded-lg font-semibold hover:bg-blue-800 transition-all active:scale-95 flex items-center justify-center gap-2;
-  }
-
-  .nav-link {
-    @apply flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-slate-400 hover:text-white hover:bg-white/10;
-  }
-
-  .nav-link.active {
-    @apply text-white bg-blue-600/20 border-r-4 border-blue-500;
-  }
-}
-
 /* Custom animations */
 @keyframes pulse-soft {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.8; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.8;
+  }
 }
 
 .animate-pulse-soft {
   animation: pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-/* Impresión del ticket de pesada (CU079). El modal se monta en un portal directo en <body>
-   (.ticket-print-root): al imprimir se oculta el resto de la aplicación y se imprime solo
-   el área del ticket, sin overlay, sin encabezado del modal y sin botones. */
+/* Impresión del ticket de pesada (CU079).
+   El modal se monta en un portal directo en body (.ticket-print-root).
+   Al imprimir se oculta el resto de la aplicación y se imprime solo
+   el área del ticket, sin overlay, encabezado del modal ni botones. */
 @media print {
-  body > :not(.ticket-print-root) {
+
+  /* El aislamiento se activa únicamente al imprimir el ticket. */
+  body.ticket-printing> :not(.ticket-print-root) {
     display: none !important;
   }
 
@@ -78,5 +56,109 @@
   #ticket-print-area {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+  }
+}
+
+/* Impresión / exportación PDF de reportes */
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 12mm;
+  }
+
+  body.reports-printing {
+    background: #fff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  body.reports-printing * {
+    visibility: hidden !important;
+  }
+
+  body.reports-printing .reports-print-root,
+  body.reports-printing .reports-print-root * {
+    visibility: visible !important;
+  }
+
+  body.reports-printing .reports-print-root {
+    position: absolute !important;
+    inset: 0 auto auto 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: #fff !important;
+    overflow: visible !important;
+  }
+
+  body.reports-printing .reports-no-print {
+    display: none !important;
+  }
+
+  body.reports-printing .reports-print-root .overflow-x-auto {
+    overflow: visible !important;
+  }
+
+  body.reports-printing .reports-print-root table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    page-break-inside: auto;
+  }
+
+  body.reports-printing .reports-print-root tr,
+  body.reports-printing .reports-print-root .rounded-2xl {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  body.reports-printing .reports-print-root th,
+  body.reports-printing .reports-print-root td {
+    color: #111827 !important;
+  }
+}
+
+/* Ajustes generales para pantallas pequeñas */
+@media (max-width: 639px) {
+
+  html,
+  body,
+  #root {
+    min-width: 320px;
+    width: 100%;
+  }
+
+  body {
+    overflow-x: hidden;
+  }
+
+  input,
+  select,
+  textarea,
+  button {
+    max-width: 100%;
+  }
+
+  /* Las tablas conservan sus columnas y permiten desplazamiento horizontal */
+  .overflow-x-auto {
+    max-width: 100%;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Evita que los cuadros y tarjetas fuercen el ancho de la pantalla */
+  .min-w-0 {
+    min-width: 0;
+  }
+
+  .ticket-print-root {
+    align-items: flex-start;
+    overflow-y: auto;
+  }
+}
+
+@media (min-width: 640px) and (max-width: 767px) {
+  .overflow-x-auto {
+    max-width: 100%;
+    -webkit-overflow-scrolling: touch;
   }
 }

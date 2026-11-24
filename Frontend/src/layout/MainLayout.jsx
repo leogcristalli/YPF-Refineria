@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     Truck, Scale, LayoutDashboard, Users, Package,
     Briefcase, UserCheck, Monitor,
     LogOut, ChevronRight, FileText, BarChart2, Database,
-    Camera, MapPin, ListChecks, Shield, BookOpen
+    Camera, MapPin, ListChecks, Shield, BookOpen, Menu, X
 } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
 import { rutaPermitida } from '../auth/puntosMenu';
@@ -14,6 +14,11 @@ const MainLayout = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const { sesion, logout } = useAuth();
+    const [menuAbierto, setMenuAbierto] = useState(false);
+
+    useEffect(() => {
+        setMenuAbierto(false);
+    }, [location.pathname]);
 
     const menuItems = [
         {
@@ -63,20 +68,40 @@ const MainLayout = () => {
     };
 
     return (
-        <div className="flex h-screen bg-slate-50 font-sans text-slate-900 overflow-hidden">
-            {/* Sidebar */}
-            <aside className="w-72 bg-linear-to-b from-slate-900 via-slate-900 to-blue-950 text-white flex flex-col shadow-2xl z-50">
-                <div className="p-8 flex items-center gap-3">
-                    <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20 rotate-3">
-                        <Scale className="text-white" size={24} />
+        <div className="flex h-dvh min-h-screen bg-slate-50 font-sans text-slate-900 overflow-hidden">
+            {/* Fondo del menú móvil */}
+            {menuAbierto && (
+                <button
+                    type="button"
+                    aria-label="Cerrar menú"
+                    onClick={() => setMenuAbierto(false)}
+                    className="fixed inset-0 z-40 bg-slate-950/60 md:hidden"
+                />
+            )}
+
+            {/* Sidebar: fijo en escritorio y desplegable en móviles */}
+            <aside className={`fixed inset-y-0 left-0 z-50 flex w-[min(18rem,85vw)] flex-col bg-linear-to-b from-slate-900 via-slate-900 to-blue-950 text-white shadow-2xl transition-transform duration-300 md:static md:w-72 md:shrink-0 md:translate-x-0 ${menuAbierto ? 'translate-x-0' : '-translate-x-full'}`}>
+                <div className="flex items-center justify-between gap-3 p-5 sm:p-8">
+                    <div className="flex min-w-0 items-center gap-3">
+                        <div className="w-12 h-12 shrink-0 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20 rotate-3">
+                            <Scale className="text-white" size={24} />
+                        </div>
+                        <div>
+                            <h1 className="text-xl font-bold tracking-tight">CILP <span className="text-blue-400">Refinería</span></h1>
+                            <p className="text-[10px] text-slate-400 font-medium uppercase tracking-[0.2em]">Smart Weighing System</p>
+                        </div>
                     </div>
-                    <div>
-                        <h1 className="text-xl font-bold tracking-tight">CILP <span className="text-blue-400">Refinería</span></h1>
-                        <p className="text-[10px] text-slate-400 font-medium uppercase tracking-[0.2em]">Smart Weighing System</p>
-                    </div>
+                    <button
+                        type="button"
+                        aria-label="Cerrar menú"
+                        onClick={() => setMenuAbierto(false)}
+                        className="rounded-lg p-2 text-slate-400 hover:bg-white/10 hover:text-white md:hidden"
+                    >
+                        <X size={20} />
+                    </button>
                 </div>
 
-                <nav className="flex-1 px-4 space-y-8 overflow-y-auto custom-scrollbar pt-2">
+                <nav className="flex-1 px-3 sm:px-4 space-y-6 sm:space-y-8 overflow-y-auto custom-scrollbar pt-2">
                     {menuVisible.map((group, idx) => (
                         <div key={idx}>
                             <p className="px-4 text-[11px] font-bold text-slate-500 uppercase tracking-[0.15em] mb-3">{group.group}</p>
@@ -126,11 +151,22 @@ const MainLayout = () => {
             </aside>
 
             {/* Main Content Area */}
-            <div className="flex-1 flex flex-col min-w-0 bg-slate-50 relative overflow-hidden">
+            <div className="flex min-w-0 flex-1 flex-col bg-slate-50 relative overflow-hidden">
                 {/* Top Header */}
-                <header className="h-20 bg-white/80 backdrop-blur-md border-b border-slate-200 px-8 flex items-center justify-between sticky top-0 z-40">
-                    <div className="flex-1"></div>
-                    <div className="flex items-center gap-6">
+                <header className="min-h-16 sm:min-h-20 bg-white/90 backdrop-blur-md border-b border-slate-200 px-3 sm:px-6 lg:px-8 flex items-center justify-between sticky top-0 z-30">
+                    <div className="flex min-w-0 items-center gap-3">
+                        <button
+                            type="button"
+                            aria-label="Abrir menú"
+                            aria-expanded={menuAbierto}
+                            onClick={() => setMenuAbierto(true)}
+                            className="rounded-xl border border-slate-200 p-2 text-slate-700 hover:bg-slate-50 md:hidden"
+                        >
+                            <Menu size={20} />
+                        </button>
+                        <span className="truncate text-sm font-bold text-slate-700 md:hidden">CILP Refinería</span>
+                    </div>
+                    <div className="flex items-center gap-3 sm:gap-6">
                         <div className="flex items-center gap-3">
                             <div className="text-right">
                                 <p className="text-sm font-bold leading-none">Planta La Plata</p>
@@ -140,8 +176,8 @@ const MainLayout = () => {
                 </header>
 
                 {/* Content Scroll Area */}
-                <main className="flex-1 overflow-y-auto p-8 custom-scrollbar">
-                    <div className="max-w-7xl mx-auto animate-in fade-in duration-700">
+                <main className="min-w-0 flex-1 overflow-y-auto p-3 sm:p-5 lg:p-8 custom-scrollbar">
+                    <div className="mx-auto w-full max-w-7xl min-w-0 animate-in fade-in duration-700">
                         <Outlet />
                     </div>
                 </main>

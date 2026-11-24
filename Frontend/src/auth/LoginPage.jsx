@@ -125,7 +125,7 @@ const LoginPage = () => {
     return (
         <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-slate-900 via-slate-900 to-blue-950 p-4">
             <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl overflow-hidden">
-                <div className="px-8 pt-8 pb-6 flex items-center gap-3 border-b border-slate-100">
+                <div className="px-5 sm:px-8 pt-6 sm:pt-8 pb-5 sm:pb-6 flex items-center gap-3 border-b border-slate-100">
                     <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
                         <Scale className="text-white" size={24} />
                     </div>
@@ -136,7 +136,7 @@ const LoginPage = () => {
                 </div>
 
                 {paso === 'credenciales' && (
-                    <form onSubmit={handleCredenciales} className="p-8 space-y-4">
+                    <form onSubmit={handleCredenciales} className="p-5 sm:p-8 space-y-4">
                         {vencida && !error && (
                             <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-xl p-3">
                                 La sesión venció o no es válida. Vuelva a iniciar sesión.
@@ -180,7 +180,7 @@ const LoginPage = () => {
                 )}
 
                 {paso === 'codigo' && (
-                    <form onSubmit={handleCodigo} className="p-8 space-y-4">
+                    <form onSubmit={handleCodigo} className="p-5 sm:p-8 space-y-4">
                         <p className="text-sm text-slate-600">
                             Abra su aplicación autenticadora y escriba el código de 6 dígitos de <strong>CILP Refinería</strong>.
                         </p>
@@ -195,7 +195,7 @@ const LoginPage = () => {
                 )}
 
                 {paso === 'enrolar' && enrolamiento && (
-                    <form onSubmit={handleCodigo} className="p-8 space-y-4">
+                    <form onSubmit={handleCodigo} className="p-5 sm:p-8 space-y-4">
                         <p className="text-sm text-slate-600">
                             Su perfil requiere <strong>doble factor de autenticación</strong>. Configúrelo una sola vez:
                         </p>
@@ -207,7 +207,7 @@ const LoginPage = () => {
 
                         <div className="flex justify-center">
                             <div className="p-3 bg-white border border-slate-200 rounded-xl">
-                                <QRCodeSVG value={enrolamiento.uri} size={168} />
+                                <QRCodeSVG value={enrolamiento.uri} size={Math.min(168, typeof window !== 'undefined' ? window.innerWidth - 96 : 168)} />
                             </div>
                         </div>
 
