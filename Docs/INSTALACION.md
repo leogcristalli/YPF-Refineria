@@ -177,13 +177,20 @@ El frontend se comunica con la API en `http://localhost:5033/api` (definido en `
 
 ## Pruebas automáticas
 
-El proyecto `Backend.Tests` (xUnit) prueba el doble factor: el algoritmo TOTP contra los vectores oficiales del RFC 6238, la codificación Base32 contra el ejemplo del RFC 4648, el rechazo de códigos reutilizados, vencidos o mal formados, y el cifrado del secreto. Se ejecutan desde la raíz del repositorio:
+El proyecto `Backend.Tests` (xUnit, 34 pruebas unitarias) prueba el doble factor: el algoritmo TOTP contra los vectores oficiales del RFC 6238, la codificación Base32 contra el ejemplo del RFC 4648, el rechazo de códigos reutilizados, vencidos o mal formados, y el cifrado del secreto:
 
 ```
 dotnet test Backend.Tests
 ```
 
-El resto de las pruebas (pesadas, planificación, maestros, reportes y seguridad) son casos funcionales manuales, descritos en `Docs/Plan_de_Pruebas.md`.
+El proyecto `Backend.IntegrationTests` (xUnit + `WebApplicationFactory<Program>`, 111 pruebas) levanta la API real y la consulta por HTTP contra la base de demostración (seguridad, doble factor de punta a punta, báscula, planificación, maestros y reportes). **Atención:** ejecuta `reset_demo.sql` antes de cada clase, por lo que debe apuntar únicamente a la base de demostración:
+
+```powershell
+$env:CILP_TEST_CONNECTION = "Server=(localdb)\MSSQLLocalDB;Database=master;Trusted_Connection=True;TrustServerCertificate=True"
+dotnet test Backend.IntegrationTests
+```
+
+Las pruebas funcionales manuales desde la interfaz están descritas en `Docs/Plan_de_Pruebas.md`.
 
 ## Limitaciones conocidas
 

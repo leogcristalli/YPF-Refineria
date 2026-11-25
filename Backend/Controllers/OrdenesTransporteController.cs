@@ -119,7 +119,7 @@ namespace Backend.Controllers
         // ─── Validaciones compartidas por el alta y la modificación ─────────────
 
         // Devuelve un mensaje de error o null si los datos son válidos.
-        private async Task<string?> ValidarAsync(OrdenTransporteCreationDto dto, byte tipoOrden)
+        private async Task<string?> ValidarAsync(OrdenTransporteCreationDto dto, byte tipoOrden, long? idOrdenDetalleActual = null)
         {
             var esDescarga = tipoOrden == TipoOrdenDescarga;
 
@@ -133,6 +133,9 @@ namespace Backend.Controllers
                 return $"La cantidad no puede superar {CantidadMaximaKg:N2} kg.";
             if (dto.NroRemito <= 0)
                 return "El número de remito debe ser mayor a cero.";
+            if (await _context.OrdenDetalles.AnyAsync(d =>
+                d.Activo && d.Orden!.Activo && d.NroRemito == dto.NroRemito && d.Id_OrdenDetalle != idOrdenDetalleActual))
+                return $"Ya existe una orden activa con el número de remito {dto.NroRemito}.";
 
             if (!await _context.Puestos.AnyAsync(p => p.Id_PuestoExpedicionRecepcion == dto.Id_PuestoExpedicionRecepcion && p.Activo))
                 return esDescarga
@@ -323,7 +326,7 @@ namespace Backend.Controllers
             if (!PuedeOperar(tipoOrden)) return SinPermisoTipo(tipoOrden);
 
             var error = await ValidarOrdenEditableAsync(transporte, orden, "modificarse")
-                ?? await ValidarAsync(dto, tipoOrden);
+                ?? await ValidarAsync(dto, tipoOrden, transporte.Id_OrdenDetalle);
             if (error != null) return BadRequest(error);
 
             using var transaction = await _context.Database.BeginTransactionAsync();

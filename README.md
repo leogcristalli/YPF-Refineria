@@ -112,6 +112,8 @@ Usuarios de demostración (contraseña `Demo1234!`):
 │   ├── Hardware/       IDeviceConnector y simulador
 │   ├── Infrastructure/ Interceptor de auditoría y manejo de errores de FK
 │   └── Models/         Entidades mapeadas a las tablas t_*
+├── Backend.Tests/            Pruebas unitarias del doble factor (xUnit)
+├── Backend.IntegrationTests/ Pruebas de integración HTTP contra la base de demo (xUnit)
 ├── Frontend/           SPA en React + Vite
 │   └── src/
 │       ├── api/        Cliente HTTP (axios)

@@ -9,6 +9,7 @@ Verificar que el sistema cumple las reglas de negocio de la especificación (`Do
 | Nivel | Qué verifica | Cómo |
 |---|---|---|
 | **Unitarias automáticas** | Lógica del doble factor: algoritmo TOTP, Base32, rechazo de códigos reutilizados o vencidos y cifrado del secreto | Proyecto `Backend.Tests` (xUnit): `dotnet test Backend.Tests` |
+| **Integración automáticas** | Endpoints reales de la API (`WebApplicationFactory<Program>`) contra la base de demostración: seguridad, 2FA, báscula, planificación, maestros y reportes | Proyecto `Backend.IntegrationTests` (xUnit): `dotnet test Backend.IntegrationTests` (requiere `CILP_TEST_CONNECTION`) |
 | **Funcionales manuales** | Reglas de negocio de cada módulo, de punta a punta, desde la interfaz | Casos de la sección 5, sobre los datos de demostración |
 | **Seguridad** | Autenticación, doble factor, permisos por rol y aislamiento de los tokens | Casos PS de la sección 4 |
 | **Aceptación** | Que cada perfil resuelva su caso práctico con el manual | Evaluación final de cada sesión del cronograma de capacitación |
@@ -22,14 +23,29 @@ Verificar que el sistema cumple las reglas de negocio de la especificación (`Do
 
 ## 4. Pruebas automáticas
 
+### Unitarias (`Backend.Tests` — 34 casos)
+
 | Clase | Qué comprueba |
 |---|---|
 | `TotpTests` | Los 6 vectores oficiales del RFC 6238; aceptación del paso actual, anterior y siguiente; rechazo fuera de la ventana, de códigos incorrectos, mal formados y reutilizados; admisión de espacios; Base32 contra el ejemplo del RFC 4648; generación de secretos; dirección `otpauth` |
 | `ProtectorTotpTests` | Cifrado y descifrado del secreto; que no quede en claro; resultados distintos por cada cifrado; rechazo con otra clave, con valores alterados o inexistentes; error si falta `Jwt:Key` |
 
+### Integración (`Backend.IntegrationTests` — 111 casos)
+
+Levantan la API real (`WebApplicationFactory<Program>`) y la consultan por HTTP contra la base de demostración (ejecutan `reset_demo.sql` antes de cada clase; usar solo con la base de demostración).
+
+| Clase | Casos | Qué comprueba |
+|---|---|---|
+| `SeguridadTests` | 25 | Login, rechazo de credenciales inválidas, tokens vencidos o alterados, control de permisos por pantalla (`[Permiso]`), protecciones de baja de usuarios/roles y registro de auditoría sin relleno |
+| `DobleFactorTests` | 10 | Enrolamiento TOTP, verificación, aislamiento del token de desafío, rechazo de códigos reutilizados, bloqueo tras 5 intentos fallidos y reinicio del 2FA por administrador |
+| `OperacionesBasculaTests` | 26 | Búsqueda por patente (pendientes vs. cerradas), lecturas de báscula, pesadas automáticas y manuales (motivo y concurrencia), validaciones de peso/tolerancia y cierre de orden |
+| `PlanificacionTests` | 17 | Altas de descarga, capacidad de tanque, unicidad de número de remito, cancelación (motivo, largo máximo y liberación de volumen), replanificación, modificación y baja |
+| `MaestrosTests` | 22 | Consultas de maestros por usuario logueado y alta/modificación/baja de tanques y usuarios (validaciones de código, volumen y contraseña) |
+| `ReportesTests` | 11 | Movimientos por período (validación de fechas, períodos sin movimientos y filtro por tipo de orden), panel de control (KPIs) y exigencia de sesión |
+
 ## 5. Casos de prueba funcionales y de seguridad
 
-Resultado de la ejecución del 22/11/2026 (ver el registro de la sección 6).
+Resultado de la última ejecución (ver el registro de la sección 6).
 
 ### Seguridad y acceso (PS)
 
@@ -91,6 +107,7 @@ Resultado de la ejecución del 22/11/2026 (ver el registro de la sección 6).
 
 ## 6. Registro de ejecución
 
-| Fecha | Versión probada (commit) | Responsable | Pruebas automáticas | Casos manuales aprobados | Observaciones |
-|---|---|---|---|---|---|
-| 22/11/2026 | `#28` | `Miguel Rodríguez` | 34 de 34 correctas | 33 de 33 aprobados | 
+| Versión probada (commit) | Responsable | Pruebas automáticas | Casos manuales aprobados | Observaciones |
+|---|---|---|---|---|
+| `#28` | `Miguel Rodríguez` | 34 de 34 correctas | 34 de 34 aprobados | |
+| `#29` | `Miguel Rodríguez` | 145 de 145 correctas (34 unitarias + 111 de integración) | 33 de 33 aprobados | Se incorporó `Backend.IntegrationTests` y se agregó la validación de remito duplicado en `OrdenesTransporteController` |
